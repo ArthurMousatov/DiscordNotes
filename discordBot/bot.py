@@ -3,7 +3,7 @@ import requests
 import discord
 from discord.ext import commands
 
-token = 'NzE5ODgxMzE1Mzc3NDc5NzUy.Xt97kw.CGPRCsFiLOAA9kRVODwZeK5QYpg'
+token = ''
 boardID = "12354335asdfdserw32"
 baseUrl = "http://127.0.0.1:3000"
 deleteDelay = 10
