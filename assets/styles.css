@@ -1,0 +1,14 @@
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+body{
+    background-color: skyblue;
+}
+canvas{
+    display: block;
+    margin: 0 auto;
+    border: solid 5px red;
+}

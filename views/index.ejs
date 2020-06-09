@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="../assets/styles.css">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    </head>
+    <body>
+        <%- include('../assets/nav.ejs') %>
+
+        <main class="mx-auto w-75">
+
+            <form class="mx-auto my-5 w-50 d-flex flex-column" method="POST" action="/board">
+                <div class="form-group">
+                  <label for="roomInput">Already have a room? Input the room code and start drawing!</label>
+                  <input type="text" class="form-control" name="roomCode" id="roomInput" aria-describedby="roomInput" placeholder="Enter room code" required>
+                </div>
+                <button type="submit" class="mx-auto btn btn-primary">Enter Room</button>
+            </form>
+
+            <form class="mx-auto my-5 w-50 d-flex flex-column" method="GET" action="/board">
+                <h3>Don't have a room?</h3>
+                <button type="submit" class="mx-auto btn btn-primary">Create one!</button>
+            </form>
+        </main>
+    </body>
+
+    <!-- BootStrap Don't Touch! -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+</html>
