@@ -2,7 +2,7 @@ const socket = io.connect('http://localhost:3000');
 const roomCode = document.querySelector('#roomCode').innerHTML;
 
 let timeOutID;
-const timeOutLimit = 10000;
+const timeOutLimit = 2700000;
 
 function TimeOut(){
     socket.emit("timeOut");
