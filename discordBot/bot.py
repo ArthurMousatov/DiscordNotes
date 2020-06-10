@@ -4,7 +4,7 @@ import importlib
 import discord
 from discord.ext import commands
 
-discordTokens = importlib.import_module('discord_token')
+discordTokens = importlib.import_module('discord_tokens')
 baseUrl = "http://127.0.0.1:3000"
 deleteDelay = 10
 

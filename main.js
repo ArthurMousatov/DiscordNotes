@@ -6,7 +6,10 @@ const io = require("socket.io")(server);
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
-const port = 3000;
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 3000;
+}
 drawRooms = {};
 
 server.listen(port, () =>{
