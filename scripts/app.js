@@ -1,4 +1,4 @@
-const socket = io.connect('http://localhost:3000');
+const socket = io.connect('https://discord-notes.herokuapp.com/');
 const roomCode = document.querySelector('#roomCode').innerHTML;
 
 let timeOutID;
