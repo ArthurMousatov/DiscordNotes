@@ -13,7 +13,7 @@ if (port == null || port == "") {
 drawRooms = {};
 
 server.listen(port, () =>{
-    console.log("Server is connected on localhost: " + port);
+    console.log("Server is connected on: " + port);
 })
 
 //string randomizer via https://stackoverflow.com/questions/1349404/generate-random-string-characters-in-javascript
