@@ -16,7 +16,7 @@ Each object contains:
 
 -   room: room's name
 -   users: list of sockets
--   canvas: room's canvas
+-   canvas: array of objects containing x and y coordinates
 */
 drawRooms = [];
 
@@ -66,7 +66,7 @@ app.get('/board', function(req, res){
     let roomObj = {
         room: roomString,
         users: [],
-        canvas: undefined
+        canvas: []
     };
     drawRooms.push(roomObj);
     //Creation of user payload
@@ -86,7 +86,7 @@ app.get('/board/:id', function(req, res){
 });
 
 let botId = "12354335asdfdserw32"
-//Allows the creation of a board if the id is good
+//Allows the creation of a board if the id is approved
 app.get('/api/create/:id', function(req, res){
     if(req.params.id === botId){
         let roomString = makeid(15);
@@ -94,7 +94,7 @@ app.get('/api/create/:id', function(req, res){
         let roomObj = {
             room: roomString,
             users: [],
-            canvas: undefined
+            canvas: []
         };
         drawRooms.push(roomObj);
         console.log("Create room " + roomString)
@@ -122,35 +122,28 @@ io.on("connection", (socket) =>{
             socket.index = currentRoomIndex;
             socket.join(room);
             drawRooms[currentRoomIndex]['users'].push(socket);
-            return socket.emit("suc", drawRooms[currentRoomIndex]['canvas']);
+
+            return socket.emit("suc", drawRooms[socket.index]['canvas']);
         }else{
             return socket.emit("err", "Error, No Room named " + room);
-        }
-    })
-
-    //On user canvas sending a canvas request
-    socket.on("giveCanvas", () => {
-        if(typeof drawRooms[socket.index]['canvas'] !== 'undefined'){
-            let data = {
-                canvas: drawRooms[socket.index]['canvas']
-            };
-            socket.emit("giveCanvas", data);
-        }
-    });
-
-    //On user sending their canvas to server
-    socket.on("sendCanvas", (data) =>{
-        let currentRoomIndex = roomSearch(socket.room, drawRooms);
-        if(currentRoomIndex != null){
-            drawRooms[currentRoomIndex].emit("draw", data);
         }
     });
 
     //On user draw
+    /*
+        Data payload:
+        -x: x representing the horizontal coordinate of the pixel
+        -y: y representing the vertical coordinate of the pixel
+        -lastx: 
+        -lasty: 
+        -size: size of the pixel
+        -color: color representing the color of the pixel
+    */
     socket.on("draw", function(data){
         socket.to(socket.room).emit("draw", data);
-        drawRooms[socket.index]['canvas'] = data.newCanvas;
-        console.log("Sending canvas data to others");
+        //save the pixel data into canvas array
+        drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
+        console.log("Sending pixel data to others");
     });
 
     //On user disconnection
@@ -171,9 +164,9 @@ io.on("connection", (socket) =>{
 
     socket.on('timeOut', () =>{
         //Check if room actually exists
-        if(drawRooms.hasOwnProperty(socket.room)){
+        if(drawRooms[socket.index] !== undefined){
             console.log("Room has hit timeOut, proceeding to delete");
-            delete drawRooms[socket.room];
+            delete drawRooms[socket.index];
         }
     })
 
