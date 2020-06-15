@@ -25,6 +25,7 @@ function Draw(canvas, event, color, size){
 
     ctx.strokeStyle = color;
     ctx.lineWidth = size;
+    ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(lastx, lasty);
     ctx.lineTo(x,y);
@@ -53,6 +54,7 @@ function InitCanvas(canvas, ctx){
     for(let i = 0; i < canvas.length; i++){
         ctx.strokeStyle = canvas[i].color;
         ctx.lineWidth = canvas[i].size;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(canvas[i].lastx, canvas[i].lasty);
         ctx.lineTo(canvas[i].x,canvas[i].y);
@@ -88,6 +90,7 @@ socket.on("suc", (sentCanvas) => {
     socket.on("draw", (data) => {
         ctx.strokeStyle = data.color;
         ctx.lineWidth = data.size;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(data.lastx, data.lasty);
         ctx.lineTo(data.x, data.y);

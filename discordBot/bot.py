@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 discordTokens = importlib.import_module('discord_tokens')
-baseUrl = "http://127.0.0.1:3000"
+baseUrl = "https://discord-notes.herokuapp.com"
 deleteDelay = 10
 
 bot = commands.Bot(command_prefix='?', case_insensitive=True)
