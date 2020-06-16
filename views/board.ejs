@@ -7,9 +7,16 @@
     </head>
     <body>
         <%- include('../assets/nav.ejs') %>
-
-        <main class="mx-auto w-75">
+        <main class="mx-auto w-100 ">
+            <!-- Default dropright button -->
             <h1>Room code: <span id="roomCode"><%= data.roomCode %></span></h1>
+            <div id="tools-container">
+                <button id="redMarker" value="red">Red</button>
+                <button id="greenMarker" value="green">Green</button>
+                <button id="eraser" value="white">Eraser</button>
+                <button id="blueMarker" value="blue">Blue</button>
+                <button id="blackMarker" class="active-btn" value="black">Black</button>
+            </div>
         </main>
     </body>
     <script src="/scripts/app3.js"></script>

@@ -143,7 +143,6 @@ io.on("connection", (socket) =>{
         socket.to(socket.room).emit("draw", data);
         //save the pixel data into canvas array
         drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
-        console.log("Sending pixel data to others");
     });
 
     //On user disconnection
@@ -157,7 +156,8 @@ io.on("connection", (socket) =>{
             //If room doesn't have any other user, delete the room
             if(drawRooms[currentRoomIndex]['users'].length === 0){
                 console.log("Room has no users, proceeding to delete");
-                delete drawRooms[currentRoomIndex];
+                drawRooms.splice(currentRoomIndex, 1);
+                console.log(drawRooms);
             }
         }
     });
@@ -166,7 +166,7 @@ io.on("connection", (socket) =>{
         //Check if room actually exists
         if(drawRooms[socket.index] !== undefined){
             console.log("Room has hit timeOut, proceeding to delete");
-            delete drawRooms[socket.index];
+            drawRooms.splice(socket.index, 1);
         }
     })
 

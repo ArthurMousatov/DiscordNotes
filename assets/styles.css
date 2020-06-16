@@ -12,3 +12,16 @@ canvas{
     margin: 0 auto;
     border: solid 5px red;
 }
+#tools-container{
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+#tools-container button{
+    width: 100px;
+    height: 50px;
+}
+.active-btn{
+    border: solid 2px black;
+}
