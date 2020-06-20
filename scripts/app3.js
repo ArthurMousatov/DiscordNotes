@@ -29,7 +29,7 @@ App.whiteboard = function(){
         socket.emit("timeOut");
     }
 
-    //Client draw -> CHANGE TO IMPLEMENT OUT OF CANVAS PATHS
+    //Client draw
     function Draw(canvas, event, color, size){
         const rect = canvas.getBoundingClientRect();
         const ctx = canvas.getContext("2d");
@@ -78,6 +78,7 @@ App.whiteboard = function(){
             ctx.closePath();
             paths.push(canvas[i]);
         }
+        ResizeCanvas(canvas);
     }
 
     //Canvas drag
@@ -95,6 +96,11 @@ App.whiteboard = function(){
         }
     }
 
+    function ResizeCanvas(canvas, ctx){
+        canvas.width = document.body.clientWidth;
+        Drag(canvas, canvas.getContext('2d'));
+    }
+
     //Join the desired room
     socket.emit("joinRoom", roomCode);
 
@@ -109,7 +115,6 @@ App.whiteboard = function(){
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext("2d");
         const rect = canvas.getBoundingClientRect();
-        canvas.width = 1500;
         canvas.height = 900;
 
         //Draw the existing canvas
@@ -160,6 +165,11 @@ App.whiteboard = function(){
                 Draw(canvas, event, drawColor, drawSize);
             }
         });
+
+        window.addEventListener('resize', function(){
+            ResizeCanvas(canvas, ctx);
+        });
+
         toolContainer.addEventListener('mousedown', function(event){
             event.stopPropagation();
             console.log(event.target);
@@ -178,7 +188,6 @@ App.whiteboard = function(){
 
 
         timeOutID = setInterval(TimeOut, timeOutLimit);
-
         document.body.querySelector('main').appendChild(canvas);
     });
 }();

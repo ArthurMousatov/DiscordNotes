@@ -7,11 +7,6 @@
 body{
     background-color: skyblue;
 }
-canvas{
-    display: block;
-    margin: 0 auto;
-    border: solid 5px red;
-}
 #tools-container{
     position: fixed;
     bottom: 0;
