@@ -7,6 +7,12 @@
 body{
     background-color: skyblue;
 }
+#id-container{
+    color: white;
+}
+.menus-container{
+    display: none;
+}
 #tools-container{
     position: fixed;
     bottom: 0;
@@ -17,6 +23,50 @@ body{
     width: 100px;
     height: 50px;
 }
+#info-container{
+    max-width: 300px;
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #343A40;
+    color: white;
+}
+#hostCode{
+    display: none;
+}
 .active-btn{
-    border: solid 2px black;
+    border: solid 5px black;
+}
+#error-paragraph{
+    color: red;
+    font-size: 20px;
+}
+.users-list{
+    padding: 20px;
+    display: flex;
+    flex-flow: column wrap;
+    justify-content: center;
+    align-items: center;
+    list-style-type: none;
+}
+.user-container{
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center;
+}
+.user-container *{
+    margin: 10px;
+}
+#user-clone-container{
+    display: none;
+}
+#kick-btn{
+    width: 50px;
+    height: 50px;
+}
+#mute-btn{
+    width: 50px;
+    height: 50px;
 }

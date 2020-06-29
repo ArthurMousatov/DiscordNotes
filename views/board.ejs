@@ -8,14 +8,41 @@
     <body>
         <%- include('../assets/nav.ejs') %>
         <main class="mx-auto w-100 ">
-            <!-- Default dropright button -->
-            <h1 id="id-Container">Room code: <span id="roomCode"><%= data.roomCode %></span></h1>
-            <div id="tools-container">
-                <button id="redMarker" value="red">Red</button>
-                <button id="greenMarker" value="green">Green</button>
-                <button id="eraser" value="white">Eraser</button>
-                <button id="blueMarker" value="blue">Blue</button>
-                <button id="blackMarker" class="active-btn" value="black">Black</button>
+
+            <form class="mx-auto my-5 w-50 d-flex flex-column" name="joinForm" id="joinForm">
+                <div class="form-group">
+                  <label for="userName">Username</label>
+                  <input name="user" type="text" class="form-control" id="userName" aria-describedby="userName" value="Anonymous" required maxlength="10">
+                </div>
+                <div class="form-check">
+                    <input name="hostCheck" type="checkbox" class="form-check-input" id="hostcheck">
+                    <label class="form-check-label" for="hostcheck">Are you a host?</label>
+                </div>
+                <div class="form-group">
+                  <label for="hostID">Host ID</label>
+                  <input name="host" type="password" class="form-control" id="hostID" placeholder="Host ID" disabled>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <p id="error-paragraph"></p>
+            </form>
+
+            <div class="menus-container">
+                <!-- Information container-->
+                <div id="info-container">
+                    <ul class="users-list">
+                        <li class="user-container" id="user-clone-container">
+                            <p id="userName">UserName + if he's host</p>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Drawing tools container-->
+                <div id="tools-container">
+                    <button id="redMarker" value="red">Red</button>
+                    <button id="greenMarker" value="green">Green</button>
+                    <button id="eraser" value="white">Eraser</button>
+                    <button id="blueMarker" value="blue">Blue</button>
+                    <button id="blackMarker" class="active-btn" value="black">Black</button>
+                </div>
             </div>
         </main>
     </body>
