@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function(){
             socket.emit('usrKick', data);
         }
 
-        //Mute a user
+        //Mute and unmute a user
         function Mute(usr){
             let userName = usr.slice(userPrefix.length, usr.length);
             
@@ -109,15 +109,14 @@ document.addEventListener('DOMContentLoaded', function(){
             socket.emit('usrMute', data);
         }
 
-        //Users info init
-        function InitUsers(data){
+        function CreateUser(host, userName){
             let currentUserCont = usrCont.cloneNode(true);
-            let hostUserCont = usrCont.cloneNode(true);
-            hostUserCont.classList.add('user-container');
+            currentUserCont.id = userPrefix + userName;
             currentUserCont.classList.add('user-container');
 
-            //Check if the user is a host
-            if(isHost === true){
+            if(host){
+                currentUserCont.querySelector('#userName').innerHTML = userName + " (host)";
+            }else if(isHost){
                 let kickBtn = document.createElement('button');
                 let muteBtn = document.createElement('button');
                 kickBtn.innerHTML = "Kick";
@@ -126,20 +125,20 @@ document.addEventListener('DOMContentLoaded', function(){
                 muteBtn.id = 'mute-btn';
                 currentUserCont.appendChild(kickBtn);
                 currentUserCont.appendChild(muteBtn);
+
+                currentUserCont.querySelector('#userName').innerHTML = userName;
+            }else{
+                currentUserCont.querySelector('#userName').innerHTML = userName;
             }
 
+            usrList.appendChild(currentUserCont);
+        }
+
+        //Users info init
+        function InitUsers(data){
             for(let i = 0; i < data.users.length; i++){
-                if(data.users[i].isHost){
-                    hostUserCont.querySelector('#userName').innerHTML = data.users[i].name + " (host)";
-                    hostUserCont.id = data.users[i].name;
-                    usrList.appendChild(hostUserCont);
-                }else{
-                    currentUserCont.querySelector('#userName').innerHTML = data.users[i].name;
-                    currentUserCont.id = userPrefix + data.users[i].name;
-                    usrList.appendChild(currentUserCont);
-                }
+                CreateUser(data.users[i].isHost, data.users[i].name);
             }
-
         }
     
         //Canvas drag
@@ -183,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function(){
         });
 
         //On submitting the join form
-        joinForm.addEventListener("submit", function(event){
+        joinForm.addEventListener("submit", (event) =>{
             event.preventDefault();
             let data;
 
@@ -202,6 +201,15 @@ document.addEventListener('DOMContentLoaded', function(){
                 };
             }
             socket.emit("joinRoom", data);
+        });
+
+        //Hide and unhide the users list
+        document.querySelector('#users-btn').addEventListener('click', ()=>{
+            if(usrList.style.display === "none"){
+                usrList.style.display = "block";
+            }else{
+                usrList.style.display = "none";
+            }
         });
     
         //Failure joining a room
@@ -223,7 +231,6 @@ document.addEventListener('DOMContentLoaded', function(){
             }
             
             isHost = data.isHost;
-            console.log(isHost);
             InitUsers(data);
     
             //Listening to other user draws/paths
@@ -241,26 +248,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             //Listen to when a new user joins the room
             socket.on("usrJoin", (data) =>{
-                let currentUserCont = usrCont.cloneNode(true);
-
-                if(data.isHost){
-                    currentUserCont.querySelector('#userName').innerHTML = data.user + " (host)";
-                }else if(isHost){
-                    let kickBtn = document.createElement('button');
-                    let muteBtn = document.createElement('button');
-                    kickBtn.innerHTML = "Kick";
-                    muteBtn.innerHTML = "Mute";
-                    kickBtn.id = 'kick-btn';
-                    muteBtn.id = 'mute-btn';
-                    currentUserCont.appendChild(kickBtn);
-                    currentUserCont.appendChild(muteBtn);
-                    currentUserCont.querySelector('#userName').innerHTML = data.user;
-                }else{
-                    currentUserCont.querySelector('#userName').innerHTML = data.user;
-                }
-                currentUserCont.id = userPrefix + data.user;
-                currentUserCont.classList.add('user-container');
-                usrList.appendChild(currentUserCont);
+                CreateUser(data.isHost, data.user);
             });
 
             socket.on("usrLeft", (data) =>{
@@ -328,7 +316,6 @@ document.addEventListener('DOMContentLoaded', function(){
     
             toolContainer.addEventListener('mousedown', function(event){
                 event.stopPropagation();
-                console.log(event.target);
 
                 //Check if hit a non-active tool
                 if(event.target.className !== "active-btn" && event.target.tagName.toLowerCase() === 'button'){

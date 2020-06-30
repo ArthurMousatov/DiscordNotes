@@ -29,8 +29,6 @@ body{
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    background-color: #343A40;
-    color: white;
 }
 #hostCode{
     display: none;
@@ -43,14 +41,20 @@ body{
     font-size: 20px;
 }
 .users-list{
+    max-height: 300px;
+    overflow: auto;
     padding: 20px;
+
     display: flex;
     flex-flow: column wrap;
     justify-content: center;
     align-items: center;
+
     list-style-type: none;
 }
 .user-container{
+    margin-bottom: 10px;
+    border: dotted 2px black;
     display: flex;
     flex-flow: row wrap;
     justify-content: center;
@@ -67,6 +71,10 @@ body{
     height: 50px;
 }
 #mute-btn{
+    width: 50px;
+    height: 50px;
+}
+#users-btn{
     width: 50px;
     height: 50px;
 }

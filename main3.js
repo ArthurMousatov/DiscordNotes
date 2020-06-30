@@ -211,7 +211,7 @@ io.on("connection", (socket) =>{
             //Send the new user info to other sockets
             let sendData = {
                 user: socket.username,
-                host: socket.isHost,
+                isHost: socket.isHost,
             };
 
             socket.to(socket.room).emit("usrJoin", sendData);
@@ -222,7 +222,6 @@ io.on("connection", (socket) =>{
                 users: users,
                 isHost: socket.isHost
             };
-            console.log(socket.isHost);
 
             return socket.emit("suc", sendData);
         }else{
