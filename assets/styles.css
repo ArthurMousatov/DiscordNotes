@@ -46,7 +46,7 @@ body{
     padding: 20px;
 
     display: flex;
-    flex-flow: column wrap;
+    flex-flow: column nowrap;
     justify-content: center;
     align-items: center;
 
@@ -63,6 +63,17 @@ body{
 .user-container *{
     margin: 10px;
 }
+.options-container{
+    margin-bottom: 10px;
+    border: dotted 2px black;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+}
+.options-container *{
+    margin: 10px;
+}
 #user-clone-container{
     display: none;
 }
@@ -76,5 +87,9 @@ body{
 }
 #users-btn{
     width: 50px;
+    height: 50px;
+}
+.options-container button{
+    width: 60px;
     height: 50px;
 }

@@ -276,9 +276,14 @@ io.on("connection", (socket) =>{
         if(socket.isHost){
             let muteSocket = GetSocket(data.user, drawRooms[socket.index]['users']);
 
-            if(muteSocket !== null){
+            if(muteSocket !== null && !muteSocket.isHost){
                 muteSocket.isMuted = !muteSocket.isMuted;
-                muteSocket.emit("muted");
+                muteSocket.emit("mute");
+                
+                let data = {
+                    user: muteSocket.username
+                };
+                muteSocket.to(muteSocket.room).emit("usrMute", data);
             }
         }
     });

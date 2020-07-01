@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const errPar = document.querySelector('#error-paragraph');
         const usrList = document.querySelector('.users-list');
         const usrCont = document.querySelector('#user-clone-container');
+        const optCont = document.querySelector('.options-container');
     
         //Tool element
         const toolContainer = document.querySelector('#tools-container');
@@ -29,8 +30,10 @@ document.addEventListener('DOMContentLoaded', function(){
         let lastCoord;
 
         //User variables
+        let CurrentUserName;
         let isHost = false;
         let isMuted = false;
+        let muteAll = false;
         const userPrefix = 'user-';
         
         //Client timeout
@@ -138,6 +141,12 @@ document.addEventListener('DOMContentLoaded', function(){
         function InitUsers(data){
             for(let i = 0; i < data.users.length; i++){
                 CreateUser(data.users[i].isHost, data.users[i].name);
+            }
+            if(isHost){
+                let muteAllBtn = document.createElement('button');
+                muteAllBtn.innerHTML = "Mute All";
+                muteAllBtn.id = "muteAll-btn";
+                optCont.appendChild(muteAllBtn);
             }
         }
     
@@ -259,12 +268,26 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             });
 
+            socket.on("usrMute", (data)=>{
+                let userName = userPrefix + data.user
+                console.log(userName);
+                let mute = usrList.querySelector('#' + userName).querySelector('#mute-btn');
+                console.log(mute);
+                if(mute){
+                    if(mute.classList.contains('active-btn')){
+                        mute.classList.remove('active-btn');
+                    }else{
+                        mute.classList.add('active-btn');
+                    }
+                }
+            });
+
             socket.on("kicked", () =>{
                 socket.emit("disconnect");
                 window.location.href = '/';
             });
 
-            socket.on("muted", () =>{
+            socket.on("mute", () =>{
                 isMuted = !isMuted;
             });
     
@@ -334,6 +357,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             });
 
+            //Mute, kick and mute all buttons
             usrList.addEventListener('click', function(event){
                 if(event.target.id === 'kick-btn'){
                     Kick(event.target.parentNode.id);
@@ -341,12 +365,29 @@ document.addEventListener('DOMContentLoaded', function(){
                 
                 if(event.target.id === 'mute-btn'){
                     Mute(event.target.parentNode.id);
+                }
 
-                    if(event.target.classList.contains("active-btn")){
-                        event.target.classList.remove("active-btn");
+                if(event.target.id === 'muteAll-btn'){
+                    let usersConts = document.querySelectorAll('.user-container');
+
+                    //If everyone is already muted
+                    if(muteAll){
+                        for(let i=1; i < usersConts.length; i++){
+                            //If user muted
+                            if(usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
+                                Mute(usersConts[i].id);
+                            }
+                        }
                     }else{
-                        event.target.classList.add("active-btn");
+                        for(let i=1; i < usersConts.length; i++){
+                            //If user not muted
+                            if(!usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
+                                Mute(usersConts[i].id);
+                            }
+                        }
                     }
+
+                    muteAll = !muteAll;
                 }
             });
     
