@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const server = require('http').Server(app);
 const io = require("socket.io")(server);
+const sanitizer = require('sanitize')();
 
 const fs = require('fs');
 const bodyParser = require('body-parser');
@@ -173,19 +174,20 @@ io.on("connection", (socket) =>{
         if(currentRoomIndex != null){
             socket.room = data.room;
             socket.isMuted = false;
+            let user = sanitizer.value(data.user, 'str');
 
             //Check if name is not unique
-            if(isNameFree(data.user, drawRooms[currentRoomIndex]['users'])){
+            if(isNameFree(user, drawRooms[currentRoomIndex]['users'])){
                 console.log("Name is free");
-                socket.username = data.user;
+                socket.username = user;
             }else{
                 let counter = 0;
-                let name = data.user + String(counter);
+                let name = user + String(counter);
                 console.log(name);
                 //While name is not unique
                 while(!isNameFree(name, drawRooms[currentRoomIndex]['users'])){
                     counter++;
-                    name = data.user + String(counter);
+                    name = user + String(counter);
                 }
                 socket.username = name;
             }

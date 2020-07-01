@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -185,18 +185,19 @@ document.addEventListener('DOMContentLoaded', function(){
         joinForm.addEventListener("submit", (event) =>{
             event.preventDefault();
             let data;
+            let username = joinForm.elements.user.value.replace(/\s/g, "");
 
             //Join the desired room
             if($('#hostID').prop("disabled") === true || $("#hostID").value === ""){
                 data = {
                     room: roomCode,
-                    user: joinForm.elements.user.value,
+                    user: username,
                     host: undefined
                 };
             }else{
                 data = {
                     room: roomCode,
-                    user: joinForm.elements.user.value,
+                    user: username,
                     host: joinForm.elements.host.value
                 };
             }
@@ -314,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 ResizeCanvas(canvas, ctx);
             });
     
-            toolContainer.addEventListener('mousedown', function(event){
+            toolContainer.addEventListener('click', function(event){
                 event.stopPropagation();
 
                 //Check if hit a non-active tool
@@ -333,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             });
 
-            usrList.addEventListener('mousedown', function(event){
+            usrList.addEventListener('click', function(event){
                 if(event.target.id === 'kick-btn'){
                     Kick(event.target.parentNode.id);
                 }
