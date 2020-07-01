@@ -18,6 +18,7 @@ async def board(ctx):
     print(data)
     if(data['status'] == "OK"):
         boardUrl = "%s/board/%s" % (baseUrl, data['roomCode'])
+        await ctx.author.send("Here is the link to the created room: %s \nHere is the host ID to give you muting and kicking privileges: %s" % (boardUrl, str(data['hostCode'])))
         await ctx.send("A board has been created! Please follow this link: " + boardUrl)
     else:
         await ctx.send("Couldn't create a board. Status code: %s" % data['status'])
