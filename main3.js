@@ -242,12 +242,23 @@ io.on("connection", (socket) =>{
         -color: color of the pixel
     */
 
-    socket.on("draw", function(data){
+    socket.on("draw", (data) =>{
         if(!socket.isMuted){ 
             socket.to(socket.room).emit("draw", data);
 
             //save the pixel data into canvas array
             drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
+        }
+    });
+
+    socket.on("erase", (data) =>{
+        if(!socket.isMuted){
+            for(let i = 0; i < drawRooms[socket.index]['canvas'].length; i++){
+                if(drawRooms[socket.index]['canvas'][i].x === data.x && drawRooms[socket.index]['canvas'][i].y === data.y && drawRooms[socket.index]['canvas'][i].lastx === data.lastx && drawRooms[socket.index]['canvas'][i].lasty === data.lasty){
+                    drawRooms[socket.index]['canvas'].splice(i, 1);
+                    socket.to(socket.room).emit('erase', data);
+                }
+            }
         }
     });
 

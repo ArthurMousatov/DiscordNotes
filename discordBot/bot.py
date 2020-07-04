@@ -10,12 +10,15 @@ deleteDelay = 10
 
 bot = commands.Bot(command_prefix='?', case_insensitive=True)
 
+@bot.event
+async def on_ready():
+    print('Bot is ready')
+
 @bot.command()
 async def board(ctx):
     reqUrl = "%s/api/create/%s" % (baseUrl, discordTokens.boardID)
     r = requests.get(url = reqUrl)
     data = r.json()
-    print(data)
     if(data['status'] == "OK"):
         boardUrl = "%s/board/%s" % (baseUrl, data['roomCode'])
         await ctx.author.send("Here is the link to the created room: %s \nHere is the host ID to give you muting and kicking privileges: %s" % (boardUrl, str(data['hostCode'])))

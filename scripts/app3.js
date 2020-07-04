@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //Tool element
         const toolContainer = document.querySelector('#tools-container');
+        let isErasing = false;
     
         //Timeout variables
         let timeOutID;
@@ -27,10 +28,10 @@ document.addEventListener('DOMContentLoaded', function(){
         };
         let lastWorldCoord;
         let paths = [];
+        let tempPaths = [];
         let lastCoord;
 
         //User variables
-        let CurrentUserName;
         let isHost = false;
         let isMuted = false;
         let muteAll = false;
@@ -40,42 +41,125 @@ document.addEventListener('DOMContentLoaded', function(){
         function TimeOut(){
             socket.emit("timeOut");
         }
+
+        //Client draw optimize
+        function OptimizeDraw(canvas, ctx){
+            let toleranceX = 2;
+            let toleranceY = 2;
+
+            for(let i = 1; i < tempPaths.length - 1; i++){
+                let xDist = Math.abs(tempPaths[i].x - tempPaths[i].lastx);
+                let yDist = Math.abs(tempPaths[i].y - tempPaths[i].lasty);
+
+                //Vertical line out of place
+                if(xDist < toleranceX && yDist > toleranceY){
+                    tempPaths.splice(i, 1);
+                }
+
+                //Horizontal line out of place
+                if(yDist < toleranceY && xDist > toleranceX){
+                    tempPaths.splice(i, 1);
+                }
+            }
+
+            for(let i = 0; i < tempPaths.length; i++){
+                //Send data to server
+                let data = {
+                    x: x + worldOrigin.x * -1,
+                    y: y + worldOrigin.y * -1,
+                    lastx: lastx + worldOrigin.x * -1,
+                    lasty: lasty + worldOrigin.y * -1,
+                    size: size,
+                    color: color
+                };
+                socket.emit("draw", data);
+                paths.push(tempPaths[i]);
+            }
+
+            Drag()
+        }
     
         //Client draw
         function Draw(canvas, event, color, size){
-            const rect = canvas.getBoundingClientRect();
-            const ctx = canvas.getContext("2d");
-            const lastx = lastCoord.x - rect.left;
-            const lasty = lastCoord.y - rect.top;
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-    
-            ctx.strokeStyle = color;
-            ctx.lineWidth = size;
-            ctx.lineCap = "round";
-            ctx.beginPath();
-            ctx.moveTo(lastx, lasty);
-            ctx.lineTo(x,y);
-            ctx.stroke();
-            ctx.closePath();
-    
-            //Send data to server
-            let data = {
-                x: x + worldOrigin.x * -1,
-                y: y + worldOrigin.y * -1,
-                lastx: lastx + worldOrigin.x * -1,
-                lasty: lasty + worldOrigin.y * -1,
-                size: size,
-                color: color
-            };
-            socket.emit("draw", data);
-            paths.push(data);
+            if(!isMuted){
+                const rect = canvas.getBoundingClientRect();
+                const ctx = canvas.getContext("2d");
+                const lastx = lastCoord.x - rect.left;
+                const lasty = lastCoord.y - rect.top;
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+        
+                ctx.strokeStyle = color;
+                ctx.lineWidth = size;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(lastx, lasty);
+                ctx.lineTo(x,y);
+                ctx.stroke();
+                ctx.closePath();
+        
+                
+                paths.push(data);
+            }
     
             lastCoord= {x: event.clientX, y: event.clientY};
     
             clearInterval(timeOutID);
             timeOutID = setInterval(TimeOut, timeOutLimit);
         }
+
+        //Client erase
+        function Erase(canvas, event){
+            if(!isMuted){
+                const rect = canvas.getBoundingClientRect();
+                const ctx = canvas.getContext("2d");
+                const x = event.clientX - rect.left + worldOrigin.x * -1;
+                const y = event.clientY - rect.top + worldOrigin.y * -1;
+                let tolerance = 20;
+                
+                for(let i = 0; i < paths.length; i++){
+                    var linepoint = linepointNearestMouse(paths[i], x, y);
+
+                    var dx = x - linepoint.x;
+                    var dy = y - linepoint.y;
+                    var distance = Math.abs(Math.sqrt(dx * dx + dy * dy));
+    
+                    if (distance < tolerance) {
+                        let useX = paths[i].x;
+                        let useY = paths[i].y;
+                        let useLastX = paths[i].lastx;
+                        let useLastY = paths[i].lasty;
+                        
+                        let data = {
+                            x: useX,
+                            y: useY,
+                            lastx: useLastX,
+                            lasty: useLastY
+                        };
+                        socket.emit('erase', data);
+                        paths.splice(i, 1);
+                    }
+                }
+                Drag(canvas, ctx);
+            }
+        }
+
+        // calculate the point on the line that's 
+        // nearest to the mouse position
+        function linepointNearestMouse(line, x, y) {
+            lerp = function(a, b, x) {
+            return (a + x * (b - a));
+            };
+            var dx = line.x - line.lastx;
+            var dy = line.y - line.lasty;
+            var t = ((x - line.x) * dx + (y - line.y) * dy) / (dx * dx + dy * dy);
+            var lineX = lerp(line.x, line.lastx, t);
+            var lineY = lerp(line.y, line.lasty, t);
+            return ({
+            x: lineX,
+            y: lineY
+            });
+        };
     
         //Server canvas init
         function InitCanvas(canvas, ctx){
@@ -84,8 +168,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.lineWidth = canvas[i].size;
                 ctx.lineCap = "round";
                 ctx.beginPath();
-                ctx.moveTo(canvas[i].lastx, canvas[i].lasty);
-                ctx.lineTo(canvas[i].x,canvas[i].y);
+                ctx.moveTo(canvas[i].lastx + worldOrigin.x, canvas[i].lasty + worldOrigin.y);
+                ctx.lineTo(canvas[i].x + worldOrigin.x,canvas[i].y + worldOrigin.y);
                 ctx.stroke();
                 ctx.closePath();
                 paths.push(canvas[i]);
@@ -256,6 +340,16 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.closePath();
             });
 
+            socket.on('erase', (data) =>{
+                for(let i = 0; i < paths.length; i++){
+                    if (paths[i].x === data.x && paths[i].y === data.y && paths[i].lastx === data.lastx && paths[i].lasty === data.lasty) {
+                        paths.splice(i, 1);
+                    }
+                }
+    
+                Drag(canvas, ctx);
+            })
+
             //Listen to when a new user joins the room
             socket.on("usrJoin", (data) =>{
                 CreateUser(data.isHost, data.user);
@@ -292,44 +386,43 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             canvas.addEventListener('mousedown', function(event){
-                if(!isMuted){
-                    if(event.buttons === 1){
+                if(event.buttons === 1 && isErasing){
+                    Erase(canvas, event);
+                }else if(event.buttons === 1 && !isErasing){
 
-                        //Set the first drawing coord
-                        lastCoord = {x: event.clientX, y: event.clientY};
-                    }else if(event.buttons === 2){
-    
-                        //Set the last world coord
-                        lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
-                    }
+                    //Set the first drawing coord
+                    lastCoord = {x: event.clientX, y: event.clientY};
+                }else if(event.buttons === 2){
+
+                    //Set the last world coord
+                    lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
             });
 
-            //Erase
+            //Drag canvas
             canvas.addEventListener('contextmenu', function(event){
                 event.preventDefault();
             });
 
-            //Draw or drag while moving mouse
+            //Draw, erase or drag while moving mouse
             canvas.addEventListener('mousemove', function(event){
-                if(!isMuted){
-                    if(event.buttons === 1){
-                        Draw(canvas, event, drawColor, drawSize);
-                    }else if(event.buttons === 2){
-                        document.body.style.cursor = "grab";
-                        worldOrigin.x = worldOrigin.x + (event.clientX - lastWorldCoord.x);
-                        worldOrigin.y = worldOrigin.y + (event.clientY - lastWorldCoord.y);
-                        Drag(canvas, ctx);
-                        lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
-                    }
+                if(event.buttons === 1 && isErasing){
+                    Erase(canvas, event);
+                }else if(event.buttons === 1){
+                    Draw(canvas, event, drawColor, drawSize);
+                }else if(event.buttons === 2){
+                    document.body.style.cursor = "grab";
+                    worldOrigin.x = worldOrigin.x + (event.clientX - rect.left - lastWorldCoord.x);
+                    worldOrigin.y = worldOrigin.y + (event.clientY - rect.top - lastWorldCoord.y);
+                    Drag(canvas, ctx);
+                    lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
             });
     
             canvas.addEventListener('mouseup', function(event){
-                if(!isMuted){
-                    if(event.buttons === 1){
-                        Draw(canvas, event, drawColor, drawSize);
-                    }
+                if(event.buttons === 1 && !isErasing){
+                    Draw(canvas, event, drawColor, drawSize);
+                    OptimizeDraw(canvas, ctx);
                 }
                 document.body.style.cursor = "default";
             });
@@ -337,7 +430,8 @@ document.addEventListener('DOMContentLoaded', function(){
             window.addEventListener('resize', function(){
                 ResizeCanvas(canvas, ctx);
             });
-    
+            
+            //Drawing tools
             toolContainer.addEventListener('click', function(event){
                 event.stopPropagation();
 
@@ -346,12 +440,13 @@ document.addEventListener('DOMContentLoaded', function(){
                     let currentTool = document.querySelector(".active-btn");
                     currentTool.classList.remove("active-btn");
                     event.target.classList.add("active-btn");
-                    drawColor = event.target.value;
 
                     //If eraser tool
-                    if(event.target.value === 'white'){
-                        drawSize = 40;
+                    if(event.target.value === 'eraser'){
+                        isErasing = true;
                     }else{
+                        isErasing = false;
+                        drawColor = event.target.value;
                         drawSize = 10;
                     }
                 }
