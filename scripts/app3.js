@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        const socket = io.connect('http://localhost:3000/')
-        //const socket = io.connect('https://discord-notes.herokuapp.com/');
+        //const socket = io.connect('http://localhost:3000/')
+        const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function(){
         };
         let lastWorldCoord;
         let paths = [];
-        let tempPaths = [];
+        let currentPaths = [];
         let lastCoord;
 
         //User variables
@@ -44,39 +44,36 @@ document.addEventListener('DOMContentLoaded', function(){
 
         //Client draw optimize
         function OptimizeDraw(canvas, ctx){
-            let toleranceX = 2;
-            let toleranceY = 2;
+            let toleranceX = 20;
+            let toleranceY = 20;
 
-            for(let i = 1; i < tempPaths.length - 1; i++){
-                let xDist = Math.abs(tempPaths[i].x - tempPaths[i].lastx);
-                let yDist = Math.abs(tempPaths[i].y - tempPaths[i].lasty);
+            for(let i = 1; i < currentPaths.length - 1; i++){
+                let xDist = Math.abs(currentPaths[i].x - currentPaths[i].lastx);
+                let yDist = Math.abs(currentPaths[i].y - currentPaths[i].lasty);
 
                 //Vertical line out of place
                 if(xDist < toleranceX && yDist > toleranceY){
-                    tempPaths.splice(i, 1);
+                    currentPaths[i+1].lastx = currentPaths[i-1].x;
+                    currentPaths[i+1].lasty = currentPaths[i-1].y;
+                    currentPaths.splice(i, 1);
                 }
 
                 //Horizontal line out of place
                 if(yDist < toleranceY && xDist > toleranceX){
-                    tempPaths.splice(i, 1);
+                    currentPaths[i+1].lastx = currentPaths[i-1].x;
+                    currentPaths[i+1].lasty = currentPaths[i-1].y;
+                    currentPaths.splice(i, 1);
                 }
             }
 
-            for(let i = 0; i < tempPaths.length; i++){
+            for(let i = 0; i < currentPaths.length; i++){
                 //Send data to server
-                let data = {
-                    x: x + worldOrigin.x * -1,
-                    y: y + worldOrigin.y * -1,
-                    lastx: lastx + worldOrigin.x * -1,
-                    lasty: lasty + worldOrigin.y * -1,
-                    size: size,
-                    color: color
-                };
-                socket.emit("draw", data);
-                paths.push(tempPaths[i]);
+                socket.emit("draw", currentPaths[i]);
+                paths.push(currentPaths[i]);
             }
 
-            Drag()
+            Drag(canvas, ctx);
+            currentPaths = [];
         }
     
         //Client draw
@@ -98,8 +95,16 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.stroke();
                 ctx.closePath();
         
-                
-                paths.push(data);
+                let data = {
+                    x: x + worldOrigin.x * -1,
+                    y:  y + worldOrigin.y * -1,
+                    lastx:  lastx + worldOrigin.x * -1,
+                    lasty:  lasty + worldOrigin.y * -1,
+                    size:  size,
+                    color:  color
+                };
+
+                currentPaths.push(data);
             }
     
             lastCoord= {x: event.clientX, y: event.clientY};
@@ -389,9 +394,9 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(event.buttons === 1 && isErasing){
                     Erase(canvas, event);
                 }else if(event.buttons === 1 && !isErasing){
-
                     //Set the first drawing coord
                     lastCoord = {x: event.clientX, y: event.clientY};
+                    Draw(canvas, event, drawColor, drawSize);
                 }else if(event.buttons === 2){
 
                     //Set the last world coord
@@ -420,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             canvas.addEventListener('mouseup', function(event){
-                if(event.buttons === 1 && !isErasing){
+                if(event.button === 0 && !isErasing){
                     Draw(canvas, event, drawColor, drawSize);
                     OptimizeDraw(canvas, ctx);
                 }
