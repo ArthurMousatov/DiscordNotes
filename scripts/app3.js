@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
         //Client draw optimize
         function OptimizeDraw(canvas, ctx){
-            let toleranceX = 20;
-            let toleranceY = 20;
+            let toleranceX = 150;
+            let toleranceY = 40;
 
             for(let i = 1; i < currentPaths.length - 1; i++){
                 let xDist = Math.abs(currentPaths[i].x - currentPaths[i].lastx);
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function(){
         
                 ctx.strokeStyle = color;
                 ctx.lineWidth = size;
-                ctx.lineCap = "round";
+                ctx.lineCap = "square";
                 ctx.beginPath();
                 ctx.moveTo(lastx, lasty);
                 ctx.lineTo(x,y);
@@ -113,59 +113,6 @@ document.addEventListener('DOMContentLoaded', function(){
             timeOutID = setInterval(TimeOut, timeOutLimit);
         }
 
-        //Client erase
-        function Erase(canvas, event){
-            if(!isMuted){
-                const rect = canvas.getBoundingClientRect();
-                const ctx = canvas.getContext("2d");
-                const x = event.clientX - rect.left + worldOrigin.x * -1;
-                const y = event.clientY - rect.top + worldOrigin.y * -1;
-                let tolerance = 20;
-                
-                for(let i = 0; i < paths.length; i++){
-                    var linepoint = linepointNearestMouse(paths[i], x, y);
-
-                    var dx = x - linepoint.x;
-                    var dy = y - linepoint.y;
-                    var distance = Math.abs(Math.sqrt(dx * dx + dy * dy));
-    
-                    if (distance < tolerance) {
-                        let useX = paths[i].x;
-                        let useY = paths[i].y;
-                        let useLastX = paths[i].lastx;
-                        let useLastY = paths[i].lasty;
-                        
-                        let data = {
-                            x: useX,
-                            y: useY,
-                            lastx: useLastX,
-                            lasty: useLastY
-                        };
-                        socket.emit('erase', data);
-                        paths.splice(i, 1);
-                    }
-                }
-                Drag(canvas, ctx);
-            }
-        }
-
-        // calculate the point on the line that's 
-        // nearest to the mouse position
-        function linepointNearestMouse(line, x, y) {
-            lerp = function(a, b, x) {
-            return (a + x * (b - a));
-            };
-            var dx = line.x - line.lastx;
-            var dy = line.y - line.lasty;
-            var t = ((x - line.x) * dx + (y - line.y) * dy) / (dx * dx + dy * dy);
-            var lineX = lerp(line.x, line.lastx, t);
-            var lineY = lerp(line.y, line.lasty, t);
-            return ({
-            x: lineX,
-            y: lineY
-            });
-        };
-    
         //Server canvas init
         function InitCanvas(canvas, ctx){
             for(let i = 0; i < canvas.length; i++){
@@ -316,8 +263,11 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //On successfully joining a room
         socket.on("suc", (data) => {
+            const defaultDrawSize = 5;
+            const defaultDrawCursor = "default";
             let drawColor = "rgb(0,0,0)";
-            let drawSize = 10;
+            let drawSize = defaultDrawSize;
+            let drawCursor = "crosshair";
     
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext("2d");
@@ -346,13 +296,15 @@ document.addEventListener('DOMContentLoaded', function(){
             });
 
             socket.on('erase', (data) =>{
-                for(let i = 0; i < paths.length; i++){
-                    if (paths[i].x === data.x && paths[i].y === data.y && paths[i].lastx === data.lastx && paths[i].lasty === data.lasty) {
-                        paths.splice(i, 1);
-                    }
-                }
-    
-                Drag(canvas, ctx);
+                paths.push(data);
+                ctx.strokeStyle = data.color;
+                ctx.lineWidth = data.size;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(data.lastx + worldOrigin.x, data.lasty + worldOrigin.y);
+                ctx.lineTo(data.x + worldOrigin.x, data.y + worldOrigin.y);
+                ctx.stroke();
+                ctx.closePath();
             })
 
             //Listen to when a new user joins the room
@@ -391,14 +343,12 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             canvas.addEventListener('mousedown', function(event){
-                if(event.buttons === 1 && isErasing){
-                    Erase(canvas, event);
-                }else if(event.buttons === 1 && !isErasing){
+                if(event.buttons === 1){
                     //Set the first drawing coord
                     lastCoord = {x: event.clientX, y: event.clientY};
+                    document.body.style.cursor = drawCursor;
                     Draw(canvas, event, drawColor, drawSize);
                 }else if(event.buttons === 2){
-
                     //Set the last world coord
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
@@ -411,9 +361,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             //Draw, erase or drag while moving mouse
             canvas.addEventListener('mousemove', function(event){
-                if(event.buttons === 1 && isErasing){
-                    Erase(canvas, event);
-                }else if(event.buttons === 1){
+                if(event.buttons === 1){
                     Draw(canvas, event, drawColor, drawSize);
                 }else if(event.buttons === 2){
                     document.body.style.cursor = "grab";
@@ -425,11 +373,13 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             canvas.addEventListener('mouseup', function(event){
-                if(event.button === 0 && !isErasing){
-                    Draw(canvas, event, drawColor, drawSize);
+                if(event.button === 0){
+                    //Draw(canvas, event, drawColor, drawSize);
                     OptimizeDraw(canvas, ctx);
+                    clearInterval(timeOutID);
+                    timeOutID = setInterval(TimeOut, timeOutLimit);
                 }
-                document.body.style.cursor = "default";
+                document.body.style.cursor = defaultDrawCursor;
             });
     
             window.addEventListener('resize', function(){
@@ -449,10 +399,14 @@ document.addEventListener('DOMContentLoaded', function(){
                     //If eraser tool
                     if(event.target.value === 'eraser'){
                         isErasing = true;
+                        drawSize = defaultDrawSize;
+                        drawCursor = "crosshair";
+                        drawColor = "white";
                     }else{
                         isErasing = false;
                         drawColor = event.target.value;
-                        drawSize = 10;
+                        drawSize = defaultDrawSize;
+                        drawCursor = "crosshair";
                     }
                 }
             });
