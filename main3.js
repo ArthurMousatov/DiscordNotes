@@ -243,7 +243,7 @@ io.on("connection", (socket) =>{
     */
 
     socket.on("draw", (data) =>{
-        if(!socket.isMuted){ 
+        if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){ 
             socket.to(socket.room).emit("draw", data);
 
             //save the pixel data into canvas array
@@ -252,7 +252,7 @@ io.on("connection", (socket) =>{
     });
 
     socket.on("erase", (data) =>{
-        if(!socket.isMuted){
+        if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){
             socket.to(socket.room).emit('erase', data);
 
             //save the pixel data into canvas array

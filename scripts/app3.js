@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function(){
         let paths = [];
         let currentPaths = [];
         let lastCoord;
+        let zoomFactor = 1;
 
         //User variables
         let isHost = false;
@@ -87,8 +88,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 const y = event.clientY - rect.top;
         
                 ctx.strokeStyle = color;
-                ctx.lineWidth = size;
-                ctx.lineCap = "square";
+                ctx.lineWidth = size/zoomFactor;
+                ctx.lineCap = "round";
                 ctx.beginPath();
                 ctx.moveTo(lastx, lasty);
                 ctx.lineTo(x,y);
@@ -96,10 +97,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.closePath();
         
                 let data = {
-                    x: x + worldOrigin.x * -1,
-                    y:  y + worldOrigin.y * -1,
-                    lastx:  lastx + worldOrigin.x * -1,
-                    lasty:  lasty + worldOrigin.y * -1,
+                    x: (x * zoomFactor + worldOrigin.x * -1),
+                    y:  (y * zoomFactor + worldOrigin.y * -1),
+                    lastx:  (lastx * zoomFactor + worldOrigin.x * -1),
+                    lasty:  (lasty * zoomFactor + worldOrigin.y * -1),
                     size:  size,
                     color:  color
                 };
@@ -120,8 +121,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.lineWidth = canvas[i].size;
                 ctx.lineCap = "round";
                 ctx.beginPath();
-                ctx.moveTo(canvas[i].lastx + worldOrigin.x, canvas[i].lasty + worldOrigin.y);
-                ctx.lineTo(canvas[i].x + worldOrigin.x,canvas[i].y + worldOrigin.y);
+                ctx.moveTo((canvas[i].lastx + worldOrigin.x)/zoomFactor, (canvas[i].lasty + worldOrigin.y)/zoomFactor);
+                ctx.lineTo((canvas[i].x + worldOrigin.x)/zoomFactor,(canvas[i].y + worldOrigin.y)/zoomFactor);
                 ctx.stroke();
                 ctx.closePath();
                 paths.push(canvas[i]);
@@ -191,11 +192,11 @@ document.addEventListener('DOMContentLoaded', function(){
             ctx.clearRect(0,0, canvas.width, canvas.height);
             for(let i = 0; i < paths.length; i++){
                 ctx.strokeStyle = paths[i].color;
-                ctx.lineWidth = paths[i].size;
+                ctx.lineWidth = paths[i].size/zoomFactor;
                 ctx.lineCap = "round";
                 ctx.beginPath();
-                ctx.moveTo(paths[i].lastx + worldOrigin.x, paths[i].lasty + worldOrigin.y);
-                ctx.lineTo(paths[i].x + worldOrigin.x, paths[i].y + worldOrigin.y);
+                ctx.moveTo((paths[i].lastx + worldOrigin.x)/zoomFactor, (paths[i].lasty + worldOrigin.y)/zoomFactor);
+                ctx.lineTo((paths[i].x + worldOrigin.x)/zoomFactor, (paths[i].y + worldOrigin.y)/zoomFactor);
                 ctx.stroke();
                 ctx.closePath();
             }
@@ -286,11 +287,11 @@ document.addEventListener('DOMContentLoaded', function(){
             socket.on("draw", (data) => {
                 paths.push(data);
                 ctx.strokeStyle = data.color;
-                ctx.lineWidth = data.size;
+                ctx.lineWidth = data.size/zoomFactor;
                 ctx.lineCap = "round";
                 ctx.beginPath();
-                ctx.moveTo(data.lastx + worldOrigin.x, data.lasty + worldOrigin.y);
-                ctx.lineTo(data.x + worldOrigin.x, data.y + worldOrigin.y);
+                ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
+                ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
                 ctx.stroke();
                 ctx.closePath();
             });
@@ -390,24 +391,46 @@ document.addEventListener('DOMContentLoaded', function(){
             toolContainer.addEventListener('click', function(event){
                 event.stopPropagation();
 
-                //Check if hit a non-active tool
-                if(event.target.className !== "active-btn" && event.target.tagName.toLowerCase() === 'button'){
-                    let currentTool = document.querySelector(".active-btn");
-                    currentTool.classList.remove("active-btn");
-                    event.target.classList.add("active-btn");
+                let currentTool = document.querySelector(".active-btn");
 
-                    //If eraser tool
-                    if(event.target.value === 'eraser'){
+                switch(event.target.value){
+                    case 'eraser':
                         isErasing = true;
                         drawSize = defaultDrawSize;
                         drawCursor = "crosshair";
                         drawColor = "white";
-                    }else{
+                        currentTool.classList.remove("active-btn");
+                        event.target.classList.add("active-btn");
+                        break;
+                    case 'marker':
+                        
+                        break;
+                    case 'zoomOut':
+                        zoomFactor += 0.1;
+                        if(zoomFactor >= 2){
+                            zoomFactor = 2;
+                        }else{
+                            zoomFactor += 0.1;
+                        }
+                        Drag(canvas, ctx);
+                        break;
+                    case 'zoomIn':
+                        zoomFactor -= 0.1;
+                        if(zoomFactor <= 0.1){
+                            zoomFactor = 0.1;
+                        }else{
+                            zoomFactor -= 0.1;
+                        }
+                        Drag(canvas, ctx);
+                        break;
+                    default:
                         isErasing = false;
                         drawColor = event.target.value;
                         drawSize = defaultDrawSize;
                         drawCursor = "crosshair";
-                    }
+                        currentTool.classList.remove("active-btn");
+                        event.target.classList.add("active-btn");
+                        break;
                 }
             });
 
