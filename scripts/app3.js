@@ -36,11 +36,6 @@ document.addEventListener('DOMContentLoaded', function(){
         let isMuted = false;
         let muteAll = false;
         const userPrefix = 'user-';
-        
-        //Client timeout
-        function TimeOut(){
-            socket.emit("timeOut");
-        }
 
         //Client draw optimize
         function OptimizeDraw(canvas, ctx){
@@ -108,9 +103,6 @@ document.addEventListener('DOMContentLoaded', function(){
             }
     
             lastCoord= {x: event.clientX, y: event.clientY};
-    
-            clearInterval(timeOutID);
-            timeOutID = setInterval(TimeOut, timeOutLimit);
         }
 
         //Server canvas init
@@ -347,6 +339,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 window.location.href = '/';
             });
 
+            socket.on("timeOut", ()=>{
+                window.location.href = '/';
+            })
+
             socket.on("mute", () =>{
                 isMuted = !isMuted;
             });
@@ -385,8 +381,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(event.button === 0){
                     //Draw(canvas, event, drawColor, drawSize);
                     OptimizeDraw(canvas, ctx);
-                    clearInterval(timeOutID);
-                    timeOutID = setInterval(TimeOut, timeOutLimit);
                 }
                 document.body.style.cursor = defaultDrawCursor;
             });
@@ -409,6 +403,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         event.target.classList.add("active-btn");
                         break;
                     case 'marker':
+                        drawColor = "black";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
@@ -489,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             document.querySelector('#drawSize-container').innerHTML = drawSize;
-            timeOutID = setInterval(TimeOut, timeOutLimit);
             document.body.querySelector('main').appendChild(canvas);
             document.body.querySelector('.menus-container').style.display = "block";
             joinForm.parentNode.removeChild(joinForm);

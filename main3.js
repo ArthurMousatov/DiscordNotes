@@ -20,9 +20,11 @@ Each object contains:
 -   host: host's id
 -   users: list of sockets
 -   canvas: array of objects containing x and y coordinates
+-   timeOut: the timeoutID
 */
 
 drawRooms = [];
+let timeOutLimit = 1800000; //30 minutes
 
 server.listen(port, () =>{
     console.log("Server is connected on: " + port);
@@ -84,6 +86,19 @@ function isNameFree(name, users){
     return true;
 }
 
+function TimeOut(){
+    //Check if room exists
+    let currentRoomIndex = RoomSearch(this.room, drawRooms);
+    if(currentRoomIndex !== null){
+        console.log("Room has hit timeOut, proceeding to delete");
+        for(let i = 0; i < drawRooms[currentRoomIndex]['users'].length; i++){
+            drawRooms[currentRoomIndex]['users'][i].emit('timeOut');
+        }
+        clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+        drawRooms.splice(currentRoomIndex, 1);
+    }
+}
+
 //create app/json parser
 let jsonParser = bodyParser.json();
 
@@ -101,13 +116,18 @@ app.get('/', function(req, res){
 app.get('/board', function(req, res){
     let roomString = MakeId(15);
     let hostID = MakeId(15);
+    let timeOutInfo = {
+        room: roomString
+    };
+    let timeOutID = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
 
     //Creation of new room
     let roomObj = {
         room: roomString,
         host: hostID,
         users: [],
-        canvas: []
+        canvas: [],
+        timeOut: timeOutID
     };
     drawRooms.push(roomObj);
 
@@ -135,7 +155,12 @@ app.get('/api/create/:id', function(req, res){
     if(req.params.id === botId){
         let roomString;
         let hostID = MakeId(15);
+        let timeOutInfo = {
+            room: roomString
+        };
+        let timeOutID = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
 
+        //Search for a non-used room string
         do{
             roomString = MakeId(15);
         }while(RoomSearch(roomString, drawRooms) !== null)
@@ -145,7 +170,8 @@ app.get('/api/create/:id', function(req, res){
             room: roomString,
             host: hostID,
             users: [],
-            canvas: []
+            canvas: [],
+            timeOut: timeOutID
         };
         drawRooms.push(roomObj);
         console.log("Create room " + roomString);
@@ -184,6 +210,7 @@ io.on("connection", (socket) =>{
                 let counter = 0;
                 let name = user + String(counter);
                 console.log(name);
+
                 //While name is not unique
                 while(!isNameFree(name, drawRooms[currentRoomIndex]['users'])){
                     counter++;
@@ -245,6 +272,13 @@ io.on("connection", (socket) =>{
     socket.on("draw", (data) =>{
         if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){ 
             socket.to(socket.room).emit("draw", data);
+            
+            //Reset timeOut
+            let timeOutInfo = {
+                room: drawRooms[socket.index]['room']
+            };
+            clearInterval(drawRooms[socket.index]['timeOut']);
+            drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
 
             //save the pixel data into canvas array
             drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
@@ -254,6 +288,13 @@ io.on("connection", (socket) =>{
     socket.on("erase", (data) =>{
         if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){
             socket.to(socket.room).emit('erase', data);
+
+            //Reset timeOut
+            let timeOutInfo = {
+                room: drawRooms[socket.index]['room']
+            };
+            clearInterval(drawRooms[socket.index]['timeOut']);
+            drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
 
             //save the pixel data into canvas array
             drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
@@ -311,6 +352,7 @@ io.on("connection", (socket) =>{
             //If room doesn't have any other user, delete the room
             if(drawRooms[currentRoomIndex]['users'].length === 0){
                 console.log("Room has no users, proceeding to delete");
+                clearInterval(drawRooms[currentRoomIndex]['timeOut']);
                 drawRooms.splice(currentRoomIndex, 1);
             }else{
                 let data = {
@@ -320,15 +362,4 @@ io.on("connection", (socket) =>{
             }
         }
     });
-
-    socket.on('timeOut', () =>{
-
-        //Check if room actually exists
-        if(drawRooms[socket.index] !== undefined){
-            console.log("Room has hit timeOut, proceeding to delete");
-            drawRooms.splice(socket.index, 1);
-        }
-    })
-
-    console.log("Connection establised");
 });
