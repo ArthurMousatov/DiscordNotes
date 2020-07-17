@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        const socket = io.connect('http://localhost:3000/')
-        //const socket = io.connect('https://discord-notes.herokuapp.com/');
+        //const socket = io.connect('http://localhost:3000/')
+        const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function(){
         function OpenColors(){
             let drwContainer = document.querySelector('#colors-container');
             console.log(drwContainer.style.display);
-            if(drwContainer.style.display === "none"){
+            if(drwContainer.style.display !== "flex"){
                 drwContainer.style.display = "flex";
             }else{
                 drwContainer.style.display = "none";
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
         //Hide and unhide the users list
         document.querySelector('#users-btn').addEventListener('click', ()=>{
-            if(usrList.style.display === "none"){
+            if(usrList.style.display !== "block"){
                 usrList.style.display = "block";
             }else{
                 usrList.style.display = "none";
@@ -307,11 +307,11 @@ document.addEventListener('DOMContentLoaded', function(){
             socket.on('erase', (data) =>{
                 paths.push(data);
                 ctx.strokeStyle = data.color;
-                ctx.lineWidth = data.size;
+                ctx.lineWidth = data.size/zoomFactor;
                 ctx.lineCap = "round";
                 ctx.beginPath();
-                ctx.moveTo(data.lastx + worldOrigin.x, data.lasty + worldOrigin.y);
-                ctx.lineTo(data.x + worldOrigin.x, data.y + worldOrigin.y);
+                ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
+                ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
                 ctx.stroke();
                 ctx.closePath();
             })
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function(){
             });
             
             //Drawing tools
-            toolContainer.addEventListener('click', function(event){
+            document.querySelector('#userActions-container').addEventListener('click', function(event){
                 event.stopPropagation();
 
                 let currentTool = document.querySelector(".active-btn");
@@ -429,14 +429,14 @@ document.addEventListener('DOMContentLoaded', function(){
                         break;
                     case 'drawAdd':
                         drawSize += 1;
-                        if(zoomFactor >= 20){
-                            zoomFactor = 20;
+                        if(drawSize >= 20){
+                            drawSize = 20;
                         }
                         document.querySelector('#drawSize-container').innerHTML = drawSize;
                         break;
                     case 'drawRemove':
                         drawSize -= 1;
-                        if(zoomFactor <= 0){
+                        if(drawSize <= 0){
                             drawSize = 1;
                         }
                         document.querySelector('#drawSize-container').innerHTML = drawSize;
@@ -448,7 +448,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
             document.querySelector('#colors-container').addEventListener('click', function(event){
                 event.stopPropagation();
-                drawColor = event.target.value;
+                if(event.target.tagName.toLowerCase() === "button"){
+                    drawColor = event.target.value;
+                    OpenColors();
+                }
             });
 
             //Mute, kick and mute all buttons

@@ -32,6 +32,12 @@ body{
     margin: 10px;
     border-radius: 10px;
 }
+#zoom-container{
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+}
 #colors-container{
     display: none;
     flex-flow: row nowrap;
@@ -59,7 +65,7 @@ body{
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
-    align-items: center;
+    align-items: baseline;
 }
 #info-container{
     max-width: 300px;
@@ -83,7 +89,7 @@ body{
     overflow: auto;
     padding: 20px;
 
-    display: flex;
+    display: none;
     flex-flow: column nowrap;
     justify-content: center;
     align-items: center;
