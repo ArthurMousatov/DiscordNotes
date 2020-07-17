@@ -204,7 +204,6 @@ io.on("connection", (socket) =>{
 
             //Check if name is not unique
             if(isNameFree(user, drawRooms[currentRoomIndex]['users'])){
-                console.log("Name is free");
                 socket.username = user;
             }else{
                 let counter = 0;
@@ -270,7 +269,7 @@ io.on("connection", (socket) =>{
     */
 
     socket.on("draw", (data) =>{
-        if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){ 
+        if(!socket.isMuted && drawRooms[socket.index]['canvas']){ 
             socket.to(socket.room).emit("draw", data);
             
             //Reset timeOut

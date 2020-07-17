@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -408,6 +408,34 @@ document.addEventListener('DOMContentLoaded', function(){
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
+                    case 'drawAdd':
+                        drawSize += 1;
+                        document.querySelector('#drawSize-container').value = drawSize;
+                        break;
+                    case 'drawRemove':
+                        drawSize -= 1;
+                        if(drawSize <= 0){
+                            drawSize = 1;
+                        }
+                        document.querySelector('#drawSize-container').value = drawSize;
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            document.querySelector('#colors-container').addEventListener('click', function(event){
+                event.stopPropagation();
+                if(event.target.tagName.toLowerCase() === "button"){
+                    drawColor = event.target.value;
+                    OpenColors();
+                }
+            });
+
+            document.querySelector('#zoom-container').addEventListener('click', function(event){
+                event.stopPropagation();
+
+                switch(event.target.value){
                     case 'zoomOut':
                         zoomFactor += 0.1;
                         if(zoomFactor >= 2){
@@ -422,30 +450,16 @@ document.addEventListener('DOMContentLoaded', function(){
                         }
                         Drag(canvas, ctx);
                         break;
-                    case 'drawAdd':
-                        drawSize += 1;
-                        if(drawSize >= 20){
-                            drawSize = 20;
-                        }
-                        document.querySelector('#drawSize-container').innerHTML = drawSize;
-                        break;
-                    case 'drawRemove':
-                        drawSize -= 1;
-                        if(drawSize <= 0){
-                            drawSize = 1;
-                        }
-                        document.querySelector('#drawSize-container').innerHTML = drawSize;
-                        break;
                     default:
                         break;
                 }
             });
 
-            document.querySelector('#colors-container').addEventListener('click', function(event){
-                event.stopPropagation();
-                if(event.target.tagName.toLowerCase() === "button"){
-                    drawColor = event.target.value;
-                    OpenColors();
+            document.querySelector('#drawSize-container').addEventListener('input', function(event){
+                if(!isNaN(event.target.value) && event.target.value > 0){
+                    drawSize = event.target.value;
+                }else{
+                    event.target.value = drawSize;
                 }
             });
 
@@ -483,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             });
     
-            document.querySelector('#drawSize-container').innerHTML = drawSize;
+            document.querySelector('#drawSize-container').value = drawSize;
             document.body.querySelector('main').appendChild(canvas);
             document.body.querySelector('.menus-container').style.display = "block";
             joinForm.parentNode.removeChild(joinForm);

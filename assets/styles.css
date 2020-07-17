@@ -33,10 +33,20 @@ body{
     border-radius: 10px;
 }
 #zoom-container{
+    position: fixed;
+    bottom: 0;
+    right: 0;
+
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
-    align-items: center;
+    align-items: baseline;
+}
+#zoom-container button{
+    width: 30px;
+    height: 30px;
+    margin: 10px;
+    border-radius: 15%;
 }
 #colors-container{
     display: none;
@@ -61,11 +71,20 @@ body{
 #blueMarker{
     background-color: blue;
 }
+#drawMore{
+    width: 30px;
+    height: 30px;
+    margin: 10px;
+}
 #userActions-container{
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
     align-items: baseline;
+}
+#drawSize-container{
+    width: 40px;
+    height: 30px;
 }
 #info-container{
     max-width: 300px;
