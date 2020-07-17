@@ -13,13 +13,16 @@ body{
 .menus-container{
     display: none;
 }
+
+/* User actions styles */
 #tools-container{
     position: fixed;
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
+
     display: flex;
-    flex-flow: row nowrap;
+    flex-flow: column nowrap;
     justify-content: center;
     align-items: center;
 }
@@ -28,6 +31,35 @@ body{
     height: 50px;
     margin: 10px;
     border-radius: 10px;
+}
+#colors-container{
+    display: none;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+}
+#colors-container button{
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+}
+#redMarker{
+    background-color: red;
+}
+#greenMarker{
+    background-color: green;
+}
+#blackMarker{
+    background-color: black;
+}
+#blueMarker{
+    background-color: blue;
+}
+#userActions-container{
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
 }
 #info-container{
     max-width: 300px;

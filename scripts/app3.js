@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //Tool element
         const toolContainer = document.querySelector('#tools-container');
-        let isErasing = false;
     
         //Timeout variables
         let timeOutID;
@@ -208,6 +207,16 @@ document.addEventListener('DOMContentLoaded', function(){
             Drag(canvas, canvas.getContext('2d'));
         }
 
+        function OpenColors(){
+            let drwContainer = document.querySelector('#colors-container');
+            console.log(drwContainer.style.display);
+            if(drwContainer.style.display === "none"){
+                drwContainer.style.display = "flex";
+            }else{
+                drwContainer.style.display = "none";
+            }
+        }
+
         //Join form
         let joinForm = document.forms["joinForm"];
 
@@ -264,10 +273,9 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //On successfully joining a room
         socket.on("suc", (data) => {
-            const defaultDrawSize = 5;
             const defaultDrawCursor = "default";
             let drawColor = "rgb(0,0,0)";
-            let drawSize = defaultDrawSize;
+            let drawSize = 5;
             let drawCursor = "crosshair";
     
             const canvas = document.createElement('canvas');
@@ -395,22 +403,20 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 switch(event.target.value){
                     case 'eraser':
-                        isErasing = true;
-                        drawSize = defaultDrawSize;
                         drawCursor = "crosshair";
                         drawColor = "white";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         break;
                     case 'marker':
-                        
+                        currentTool.classList.remove("active-btn");
+                        event.target.classList.add("active-btn");
+                        OpenColors();
                         break;
                     case 'zoomOut':
                         zoomFactor += 0.1;
                         if(zoomFactor >= 2){
                             zoomFactor = 2;
-                        }else{
-                            zoomFactor += 0.1;
                         }
                         Drag(canvas, ctx);
                         break;
@@ -418,20 +424,31 @@ document.addEventListener('DOMContentLoaded', function(){
                         zoomFactor -= 0.1;
                         if(zoomFactor <= 0.1){
                             zoomFactor = 0.1;
-                        }else{
-                            zoomFactor -= 0.1;
                         }
                         Drag(canvas, ctx);
                         break;
+                    case 'drawAdd':
+                        drawSize += 1;
+                        if(zoomFactor >= 20){
+                            zoomFactor = 20;
+                        }
+                        document.querySelector('#drawSize-container').innerHTML = drawSize;
+                        break;
+                    case 'drawRemove':
+                        drawSize -= 1;
+                        if(zoomFactor <= 0){
+                            drawSize = 1;
+                        }
+                        document.querySelector('#drawSize-container').innerHTML = drawSize;
+                        break;
                     default:
-                        isErasing = false;
-                        drawColor = event.target.value;
-                        drawSize = defaultDrawSize;
-                        drawCursor = "crosshair";
-                        currentTool.classList.remove("active-btn");
-                        event.target.classList.add("active-btn");
                         break;
                 }
+            });
+
+            document.querySelector('#colors-container').addEventListener('click', function(event){
+                event.stopPropagation();
+                drawColor = event.target.value;
             });
 
             //Mute, kick and mute all buttons
@@ -468,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             });
     
-    
+            document.querySelector('#drawSize-container').innerHTML = drawSize;
             timeOutID = setInterval(TimeOut, timeOutLimit);
             document.body.querySelector('main').appendChild(canvas);
             document.body.querySelector('.menus-container').style.display = "block";
