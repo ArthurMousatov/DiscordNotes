@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //On successfully joining a room
         socket.on("suc", (data) => {
-            let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#main-nav').height);
+            let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
             let drawColor = "rgb(0,0,0)";
             let drawSize = 5;
     
@@ -383,16 +383,17 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             });
 
-            canvas.addEventListener('mouseout', function(event){
+            canvas.addEventListener('mouseout', function(){
                 cursor.HideCursor();
             });
 
-            canvas.addEventListener('mouseenter', function(event){
+            canvas.addEventListener('mouseenter', function(){
                 cursor.ShowCursor();
             })
     
             window.addEventListener('resize', function(){
                 ResizeCanvas(canvas, ctx);
+                cursor.offsetY = document.querySelector('#cursor-helper').offsetTop;
             });
             
             //Drawing tools

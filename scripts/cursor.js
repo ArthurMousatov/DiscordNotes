@@ -11,6 +11,7 @@ function Cursor(cursorDiv, offset){
         height: 50
     };
     this.offsetY = offset;
+    console.log(offset, document.querySelector('main').offsetTop);
     this.cursor = document.createElement('img');
     this.InitializeCursor();
 };
@@ -34,7 +35,7 @@ Cursor.prototype.HideCursor = function(){
 
 Cursor.prototype.SetCoordinates = function(x, y){
     this.coordinates.x = x - this.size.width/2;
-    this.coordinates.y = y - this.size.height/2 - 62;
+    this.coordinates.y = y - this.size.height/2 - this.offsetY;
     this.cursor.style.top = this.coordinates.y + 'px';
     this.cursor.style.left = this.coordinates.x + 'px';
     //console.log(this.cursor.style.left, this.cursor.style.top);
