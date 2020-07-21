@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -15,10 +15,6 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //Tool element
         const toolContainer = document.querySelector('#tools-container');
-    
-        //Timeout variables
-        let timeOutID;
-        const timeOutLimit = 2700000; //45 minutes
         
         //Path variables
         let worldOrigin = {
@@ -265,10 +261,9 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //On successfully joining a room
         socket.on("suc", (data) => {
-            const defaultDrawCursor = "default";
+            let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#main-nav').height);
             let drawColor = "rgb(0,0,0)";
             let drawSize = 5;
-            let drawCursor = "crosshair";
     
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext("2d");
@@ -351,10 +346,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(event.buttons === 1){
                     //Set the first drawing coord
                     lastCoord = {x: event.clientX, y: event.clientY};
-                    document.body.style.cursor = drawCursor;
                     Draw(canvas, event, drawColor, drawSize);
                 }else if(event.buttons === 2){
                     //Set the last world coord
+                    cursor.HideCursor();
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
             });
@@ -369,21 +364,32 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(event.buttons === 1){
                     Draw(canvas, event, drawColor, drawSize);
                 }else if(event.buttons === 2){
-                    document.body.style.cursor = "grab";
                     worldOrigin.x = worldOrigin.x + (event.clientX - rect.left - lastWorldCoord.x);
                     worldOrigin.y = worldOrigin.y + (event.clientY - rect.top - lastWorldCoord.y);
+
                     Drag(canvas, ctx);
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
+
+                cursor.SetCoordinates(event.pageX, event.pageY);
             });
     
             canvas.addEventListener('mouseup', function(event){
                 if(event.button === 0){
                     //Draw(canvas, event, drawColor, drawSize);
                     OptimizeDraw(canvas, ctx);
+                }else if(event.button === 2){
+                    cursor.ShowCursor();
                 }
-                document.body.style.cursor = defaultDrawCursor;
             });
+
+            canvas.addEventListener('mouseout', function(event){
+                cursor.HideCursor();
+            });
+
+            canvas.addEventListener('mouseenter', function(event){
+                cursor.ShowCursor();
+            })
     
             window.addEventListener('resize', function(){
                 ResizeCanvas(canvas, ctx);
@@ -411,6 +417,7 @@ document.addEventListener('DOMContentLoaded', function(){
                     case 'drawAdd':
                         drawSize += 1;
                         document.querySelector('#drawSize-container').value = drawSize;
+                        cursor.SetSize(drawSize);
                         break;
                     case 'drawRemove':
                         drawSize -= 1;
@@ -418,6 +425,7 @@ document.addEventListener('DOMContentLoaded', function(){
                             drawSize = 1;
                         }
                         document.querySelector('#drawSize-container').value = drawSize;
+                        cursor.SetSize(drawSize);
                         break;
                     default:
                         break;
@@ -461,6 +469,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }else{
                     event.target.value = drawSize;
                 }
+                cursor.SetSize(drawSize);
             });
 
             //Mute, kick and mute all buttons
@@ -496,7 +505,10 @@ document.addEventListener('DOMContentLoaded', function(){
                     muteAll = !muteAll;
                 }
             });
-    
+            
+            cursor.ChangeCursor('marker', drawSize);
+            cursor.ShowCursor();
+
             document.querySelector('#drawSize-container').value = drawSize;
             document.body.querySelector('main').appendChild(canvas);
             document.body.querySelector('.menus-container').style.display = "block";

@@ -7,6 +7,21 @@
 body{
     background-color: skyblue;
 }
+main{
+    position: relative;
+}
+/* Cursor Styles */
+#cursor-container{
+    position: absolute;
+    z-index: 10;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+#cursor-img{
+    position: absolute;
+    z-index: 11;
+    pointer-events: none;
+}
 #id-container{
     color: white;
 }
