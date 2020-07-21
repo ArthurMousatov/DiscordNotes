@@ -208,7 +208,6 @@ io.on("connection", (socket) =>{
             }else{
                 let counter = 0;
                 let name = user + String(counter);
-                console.log(name);
 
                 //While name is not unique
                 while(!isNameFree(name, drawRooms[currentRoomIndex]['users'])){

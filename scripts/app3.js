@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        const socket = io.connect('http://localhost:3000/')
-        //const socket = io.connect('https://discord-notes.herokuapp.com/');
+        //const socket = io.connect('http://localhost:3000/')
+        const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -12,9 +12,7 @@ document.addEventListener('DOMContentLoaded', function(){
         const usrList = document.querySelector('.users-list');
         const usrCont = document.querySelector('#user-clone-container');
         const optCont = document.querySelector('.options-container');
-    
-        //Tool element
-        const toolContainer = document.querySelector('#tools-container');
+        const importBtn = document.querySelector('#import-input');
         
         //Path variables
         let worldOrigin = {
@@ -263,12 +261,71 @@ document.addEventListener('DOMContentLoaded', function(){
         socket.on("suc", (data) => {
             let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
             let drawColor = "rgb(0,0,0)";
-            let drawSize = 5;
+            let drawSize = 15;
     
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext("2d");
             const rect = canvas.getBoundingClientRect();
             canvas.height = 900;
+
+            //Export/Import functions
+            function DrawPath(lastx, lasty, x, y, size, color){
+                let data = {
+                    x: x,
+                    y:  y,
+                    lastx:  lastx,
+                    lasty:  lasty,
+                    size:  size,
+                    color:  color
+                };
+                paths.push(data);
+    
+                ctx.strokeStyle = data.color;
+                ctx.lineWidth = data.size/zoomFactor;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
+                ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
+                ctx.stroke();
+                ctx.closePath();
+    
+                socket.emit('draw', data);
+            }
+
+            function DownloadPaths(exportObj, exportName){
+                var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+                var downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href",     dataStr);
+                downloadAnchorNode.setAttribute("download", exportName + ".json");
+                document.body.appendChild(downloadAnchorNode); // required for firefox
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+    
+            function ImportPaths(){
+                if(!isMuted){
+                    let reader = new FileReader();
+        
+                    reader.addEventListener('error', ()=>{
+                        console.log(`Error occured during reading`);
+                        reader.abort();
+                    });
+        
+                    reader.onloadend = function(){
+                        let jsonResult = JSON.parse(reader.result);
+                        for(let i = 0;i < jsonResult.paths.length; i++){
+                            DrawPath(jsonResult.paths[i].lastx, jsonResult.paths[i].lasty, jsonResult.paths[i].x, jsonResult.paths[i].y, jsonResult.paths[i].size, jsonResult.paths[i].color);
+                        }
+                    }
+        
+                    if(importBtn.files > 1 || importBtn.files <= 0){
+                        console.log("Error importing");
+                    }else{
+                        let obj = importBtn.files[0];
+                        reader.readAsText(obj);
+                    }
+                }
+            }
     
             //Draw the existing canvas
             if(data.canvas.length != 0){
@@ -475,37 +532,52 @@ document.addEventListener('DOMContentLoaded', function(){
 
             //Mute, kick and mute all buttons
             usrList.addEventListener('click', function(event){
-                if(event.target.id === 'kick-btn'){
-                    Kick(event.target.parentNode.id);
-                }
-                
-                if(event.target.id === 'mute-btn'){
-                    Mute(event.target.parentNode.id);
-                }
 
-                if(event.target.id === 'muteAll-btn'){
-                    let usersConts = document.querySelectorAll('.user-container');
+                switch(event.target.id){
+                    case 'kick-btn':
+                        Kick(event.target.parentNode.id);
+                        break;
+                    case 'mute-btn':
+                        Mute(event.target.parentNode.id);
+                        break;
+                    case 'muteAll-btn':
+                        let usersConts = document.querySelectorAll('.user-container');
 
-                    //If everyone is already muted
-                    if(muteAll){
-                        for(let i=1; i < usersConts.length; i++){
-                            //If user muted
-                            if(usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
-                                Mute(usersConts[i].id);
+                        //If everyone is already muted
+                        if(muteAll){
+                            for(let i=1; i < usersConts.length; i++){
+                                //If user muted
+                                if(usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
+                                    Mute(usersConts[i].id);
+                                }
+                            }
+                        }else{
+                            for(let i=1; i < usersConts.length; i++){
+                                //If user not muted
+                                if(!usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
+                                    Mute(usersConts[i].id);
+                                }
                             }
                         }
-                    }else{
-                        for(let i=1; i < usersConts.length; i++){
-                            //If user not muted
-                            if(!usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
-                                Mute(usersConts[i].id);
-                            }
+    
+                        muteAll = !muteAll;
+                        break;
+                    case 'export-btn':
+                        let downloadedPaths = {
+                            paths: paths
                         }
-                    }
-
-                    muteAll = !muteAll;
+                        DownloadPaths(downloadedPaths, 'discordCanvas');
+                        break;
+                    default:
+                        break;
                 }
             });
+
+            document.querySelector('#import-btn').addEventListener('click', function(){
+                document.querySelector('#import-input').click();
+            });
+
+            importBtn.addEventListener('change', ImportPaths);
             
             cursor.ChangeCursor('marker', drawSize);
             cursor.ShowCursor();
