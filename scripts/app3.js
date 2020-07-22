@@ -1,8 +1,8 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        const socket = io.connect('http://localhost:3000/')
+        //const socket = io.connect('https://discord-notes.herokuapp.com/');
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -30,89 +30,6 @@ document.addEventListener('DOMContentLoaded', function(){
         let isMuted = false;
         let muteAll = false;
         const userPrefix = 'user-';
-
-        //Client draw optimize
-        function OptimizeDraw(canvas, ctx){
-            let toleranceX = 150;
-            let toleranceY = 40;
-
-            for(let i = 1; i < currentPaths.length - 1; i++){
-                let xDist = Math.abs(currentPaths[i].x - currentPaths[i].lastx);
-                let yDist = Math.abs(currentPaths[i].y - currentPaths[i].lasty);
-
-                //Vertical line out of place
-                if(xDist < toleranceX && yDist > toleranceY){
-                    currentPaths[i+1].lastx = currentPaths[i-1].x;
-                    currentPaths[i+1].lasty = currentPaths[i-1].y;
-                    currentPaths.splice(i, 1);
-                }
-
-                //Horizontal line out of place
-                if(yDist < toleranceY && xDist > toleranceX){
-                    currentPaths[i+1].lastx = currentPaths[i-1].x;
-                    currentPaths[i+1].lasty = currentPaths[i-1].y;
-                    currentPaths.splice(i, 1);
-                }
-            }
-
-            for(let i = 0; i < currentPaths.length; i++){
-                //Send data to server
-                socket.emit("draw", currentPaths[i]);
-                paths.push(currentPaths[i]);
-            }
-
-            Drag(canvas, ctx);
-            currentPaths = [];
-        }
-    
-        //Client draw
-        function Draw(canvas, event, color, size){
-            if(!isMuted){
-                const rect = canvas.getBoundingClientRect();
-                const ctx = canvas.getContext("2d");
-                const lastx = lastCoord.x - rect.left;
-                const lasty = lastCoord.y - rect.top;
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-        
-                ctx.strokeStyle = color;
-                ctx.lineWidth = size/zoomFactor;
-                ctx.lineCap = "round";
-                ctx.beginPath();
-                ctx.moveTo(lastx, lasty);
-                ctx.lineTo(x,y);
-                ctx.stroke();
-                ctx.closePath();
-        
-                let data = {
-                    x: (x * zoomFactor + worldOrigin.x * -1),
-                    y:  (y * zoomFactor + worldOrigin.y * -1),
-                    lastx:  (lastx * zoomFactor + worldOrigin.x * -1),
-                    lasty:  (lasty * zoomFactor + worldOrigin.y * -1),
-                    size:  size,
-                    color:  color
-                };
-
-                currentPaths.push(data);
-            }
-    
-            lastCoord= {x: event.clientX, y: event.clientY};
-        }
-
-        //Server canvas init
-        function InitCanvas(canvas, ctx){
-            for(let i = 0; i < canvas.length; i++){
-                ctx.strokeStyle = canvas[i].color;
-                ctx.lineWidth = canvas[i].size;
-                ctx.lineCap = "round";
-                ctx.beginPath();
-                ctx.moveTo((canvas[i].lastx + worldOrigin.x)/zoomFactor, (canvas[i].lasty + worldOrigin.y)/zoomFactor);
-                ctx.lineTo((canvas[i].x + worldOrigin.x)/zoomFactor,(canvas[i].y + worldOrigin.y)/zoomFactor);
-                ctx.stroke();
-                ctx.closePath();
-                paths.push(canvas[i]);
-            }
-        }
 
         //Kick a user
         function Kick(usr){
@@ -170,27 +87,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 muteAllBtn.id = "muteAll-btn";
                 optCont.appendChild(muteAllBtn);
             }
-        }
-    
-        //Canvas drag
-        function Drag(canvas, ctx){
-            ctx.clearRect(0,0, canvas.width, canvas.height);
-            for(let i = 0; i < paths.length; i++){
-                ctx.strokeStyle = paths[i].color;
-                ctx.lineWidth = paths[i].size/zoomFactor;
-                ctx.lineCap = "round";
-                ctx.beginPath();
-                ctx.moveTo((paths[i].lastx + worldOrigin.x)/zoomFactor, (paths[i].lasty + worldOrigin.y)/zoomFactor);
-                ctx.lineTo((paths[i].x + worldOrigin.x)/zoomFactor, (paths[i].y + worldOrigin.y)/zoomFactor);
-                ctx.stroke();
-                ctx.closePath();
-            }
-        }
-        
-        //Drag function
-        function ResizeCanvas(canvas, ctx){
-            canvas.width = document.body.clientWidth;
-            Drag(canvas, canvas.getContext('2d'));
         }
 
         function OpenColors(){
@@ -265,10 +161,82 @@ document.addEventListener('DOMContentLoaded', function(){
     
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext("2d");
-            const rect = canvas.getBoundingClientRect();
-            canvas.height = 900;
+            console.log(window.innerWidth, window.innerWidth -document.querySelector('#cursor-helper').offsetTop);
+            canvas.height = document.body.clientHeight - document.querySelector('#cursor-helper').offsetTop;
 
-            //Export/Import functions
+            isHost = data.isHost;
+            InitUsers(data);
+
+            //Drawing functions
+
+            //Client draw
+            function Draw(event, color, size){
+                if(!isMuted){
+                    const rect = canvas.getBoundingClientRect();
+                    const lastx = lastCoord.x - rect.left;
+                    const lasty = lastCoord.y - rect.top;
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+            
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = size/zoomFactor;
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(lastx, lasty);
+                    ctx.lineTo(x,y);
+                    ctx.stroke();
+                    ctx.closePath();
+            
+                    let data = {
+                        x: (x * zoomFactor + worldOrigin.x * -1),
+                        y:  (y * zoomFactor + worldOrigin.y * -1),
+                        lastx:  (lastx * zoomFactor + worldOrigin.x * -1),
+                        lasty:  (lasty * zoomFactor + worldOrigin.y * -1),
+                        size:  size,
+                        color:  color
+                    };
+
+                    currentPaths.push(data);
+                }
+        
+                lastCoord= {x: event.clientX, y: event.clientY};
+            }
+
+            //Client draw optimize
+            function OptimizeDraw(){
+                let toleranceX = 150;
+                let toleranceY = 40;
+
+                for(let i = 1; i < currentPaths.length - 1; i++){
+                    let xDist = Math.abs(currentPaths[i].x - currentPaths[i].lastx);
+                    let yDist = Math.abs(currentPaths[i].y - currentPaths[i].lasty);
+
+                    //Vertical line out of place
+                    if(xDist < toleranceX && yDist > toleranceY){
+                        currentPaths[i+1].lastx = currentPaths[i-1].x;
+                        currentPaths[i+1].lasty = currentPaths[i-1].y;
+                        currentPaths.splice(i, 1);
+                    }
+
+                    //Horizontal line out of place
+                    if(yDist < toleranceY && xDist > toleranceX){
+                        currentPaths[i+1].lastx = currentPaths[i-1].x;
+                        currentPaths[i+1].lasty = currentPaths[i-1].y;
+                        currentPaths.splice(i, 1);
+                    }
+                }
+
+                for(let i = 0; i < currentPaths.length; i++){
+                    //Send data to server
+                    socket.emit("draw", currentPaths[i]);
+                    paths.push(currentPaths[i]);
+                }
+
+                Drag(canvas, ctx);
+                currentPaths = [];
+            }
+
+            //Draw a line
             function DrawPath(lastx, lasty, x, y, size, color){
                 let data = {
                     x: x,
@@ -278,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function(){
                     size:  size,
                     color:  color
                 };
-                paths.push(data);
     
                 ctx.strokeStyle = data.color;
                 ctx.lineWidth = data.size/zoomFactor;
@@ -288,10 +255,32 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
                 ctx.stroke();
                 ctx.closePath();
-    
-                socket.emit('draw', data);
             }
 
+            //Canvas drag
+            function Drag(){
+                ctx.clearRect(0,0, canvas.width, canvas.height);
+                for(let i = 0; i < paths.length; i++){
+                    DrawPath(paths[i].lastx,paths[i].lasty,paths[i].x,paths[i].y,paths[i].size,paths[i].color);
+                }
+            }
+
+            //Server canvas init
+            function InitCanvas(existingCanvas){
+                for(let i = 0; i < existingCanvas.length; i++){
+                    paths.push(existingCanvas[i]);
+                    DrawPath(existingCanvas[i].lastx, existingCanvas[i].lasty, existingCanvas[i].x, existingCanvas[i].y, existingCanvas[i].size, existingCanvas[i].color);
+                }
+            }
+
+            //Drag function
+            function ResizeCanvas(){
+                canvas.height = window.innerHeight - document.querySelector('#cursor-helper').offsetTop;
+                canvas.width = document.body.clientWidth;
+                Drag();
+            }
+
+            //Export paths in json format
             function DownloadPaths(exportObj, exportName){
                 var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
                 var downloadAnchorNode = document.createElement('a');
@@ -301,7 +290,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
             }
-    
+            
+            //Import paths
             function ImportPaths(){
                 if(!isMuted){
                     let reader = new FileReader();
@@ -315,6 +305,8 @@ document.addEventListener('DOMContentLoaded', function(){
                         let jsonResult = JSON.parse(reader.result);
                         for(let i = 0;i < jsonResult.paths.length; i++){
                             DrawPath(jsonResult.paths[i].lastx, jsonResult.paths[i].lasty, jsonResult.paths[i].x, jsonResult.paths[i].y, jsonResult.paths[i].size, jsonResult.paths[i].color);
+                            paths.push(jsonResult.paths[i]);
+                            socket.emit('draw', jsonResult.paths[i]);
                         }
                     }
         
@@ -329,11 +321,8 @@ document.addEventListener('DOMContentLoaded', function(){
     
             //Draw the existing canvas
             if(data.canvas.length != 0){
-                InitCanvas(data.canvas, ctx);
+                InitCanvas(data.canvas);
             }
-            
-            isHost = data.isHost;
-            InitUsers(data);
     
             //Listening to other user draws/paths
             socket.on("draw", (data) => {
@@ -358,9 +347,9 @@ document.addEventListener('DOMContentLoaded', function(){
                 ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
                 ctx.stroke();
                 ctx.closePath();
-            })
+            });
 
-            //Listen to when a new user joins the room
+            //Listen to when a new user joins/leaves the room
             socket.on("usrJoin", (data) =>{
                 CreateUser(data.isHost, data.user);
             });
@@ -393,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             socket.on("timeOut", ()=>{
                 window.location.href = '/';
-            })
+            });
 
             socket.on("mute", () =>{
                 isMuted = !isMuted;
@@ -403,9 +392,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(event.buttons === 1){
                     //Set the first drawing coord
                     lastCoord = {x: event.clientX, y: event.clientY};
-                    Draw(canvas, event, drawColor, drawSize);
+                    Draw(event, drawColor, drawSize);
                 }else if(event.buttons === 2){
                     //Set the last world coord
+                    const rect = canvas.getBoundingClientRect();
                     cursor.HideCursor();
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
@@ -419,12 +409,13 @@ document.addEventListener('DOMContentLoaded', function(){
             //Draw, erase or drag while moving mouse
             canvas.addEventListener('mousemove', function(event){
                 if(event.buttons === 1){
-                    Draw(canvas, event, drawColor, drawSize);
+                    Draw(event, drawColor, drawSize);
                 }else if(event.buttons === 2){
+                    const rect = canvas.getBoundingClientRect();
                     worldOrigin.x = worldOrigin.x + (event.clientX - rect.left - lastWorldCoord.x);
                     worldOrigin.y = worldOrigin.y + (event.clientY - rect.top - lastWorldCoord.y);
 
-                    Drag(canvas, ctx);
+                    Drag();
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
 
@@ -434,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function(){
             canvas.addEventListener('mouseup', function(event){
                 if(event.button === 0){
                     //Draw(canvas, event, drawColor, drawSize);
-                    OptimizeDraw(canvas, ctx);
+                    OptimizeDraw();
                 }else if(event.button === 2){
                     cursor.ShowCursor();
                 }
@@ -449,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function(){
             })
     
             window.addEventListener('resize', function(){
-                ResizeCanvas(canvas, ctx);
+                ResizeCanvas();
                 cursor.offsetY = document.querySelector('#cursor-helper').offsetTop;
             });
             
@@ -507,14 +498,14 @@ document.addEventListener('DOMContentLoaded', function(){
                         if(zoomFactor >= 2){
                             zoomFactor = 2;
                         }
-                        Drag(canvas, ctx);
+                        Drag();
                         break;
                     case 'zoomIn':
                         zoomFactor -= 0.1;
                         if(zoomFactor <= 0.1){
                             zoomFactor = 0.1;
                         }
-                        Drag(canvas, ctx);
+                        Drag();
                         break;
                     default:
                         break;
@@ -580,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function(){
             importBtn.addEventListener('change', ImportPaths);
             
             cursor.ChangeCursor('marker', drawSize);
-            cursor.ShowCursor();
+            //cursor.ShowCursor();
 
             document.querySelector('#drawSize-container').value = drawSize;
             document.body.querySelector('main').appendChild(canvas);

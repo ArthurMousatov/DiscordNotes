@@ -9,6 +9,7 @@ body{
 }
 main{
     position: relative;
+    overflow: hidden;
 }
 /* Cursor Styles */
 #cursor-container{
