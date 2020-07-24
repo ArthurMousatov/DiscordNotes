@@ -11,7 +11,6 @@ function Cursor(cursorDiv, offset){
         height: 50
     };
     this.offsetY = offset;
-    console.log(offset, document.querySelector('main').offsetTop);
     this.cursor = document.createElement('img');
     this.InitializeCursor();
 };

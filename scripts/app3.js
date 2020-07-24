@@ -20,9 +20,6 @@ document.addEventListener('DOMContentLoaded', function(){
             y: 0
         };
         let lastWorldCoord;
-        let paths = [];
-        let currentPaths = [];
-        let lastCoord;
         let zoomFactor = 1;
 
         //User variables
@@ -155,121 +152,20 @@ document.addEventListener('DOMContentLoaded', function(){
     
         //On successfully joining a room
         socket.on("suc", (data) => {
-            let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
-            let drawColor = "rgb(0,0,0)";
-            let drawSize = 15;
-    
             const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext("2d");
-            console.log(window.innerWidth, window.innerWidth -document.querySelector('#cursor-helper').offsetTop);
             canvas.height = document.body.clientHeight - document.querySelector('#cursor-helper').offsetTop;
+
+            let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
+            let currentPen = new Pen(15, "rgb(0,0,0)", "round", canvas, socket);
 
             isHost = data.isHost;
             InitUsers(data);
 
-            //Drawing functions
-
-            //Client draw
-            function Draw(event, color, size){
-                if(!isMuted){
-                    const rect = canvas.getBoundingClientRect();
-                    const lastx = lastCoord.x - rect.left;
-                    const lasty = lastCoord.y - rect.top;
-                    const x = event.clientX - rect.left;
-                    const y = event.clientY - rect.top;
-            
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = size/zoomFactor;
-                    ctx.lineCap = "round";
-                    ctx.beginPath();
-                    ctx.moveTo(lastx, lasty);
-                    ctx.lineTo(x,y);
-                    ctx.stroke();
-                    ctx.closePath();
-            
-                    let data = {
-                        x: (x * zoomFactor + worldOrigin.x * -1),
-                        y:  (y * zoomFactor + worldOrigin.y * -1),
-                        lastx:  (lastx * zoomFactor + worldOrigin.x * -1),
-                        lasty:  (lasty * zoomFactor + worldOrigin.y * -1),
-                        size:  size,
-                        color:  color
-                    };
-
-                    currentPaths.push(data);
-                }
-        
-                lastCoord= {x: event.clientX, y: event.clientY};
-            }
-
-            //Client draw optimize
-            function OptimizeDraw(){
-                let toleranceX = 150;
-                let toleranceY = 40;
-
-                for(let i = 1; i < currentPaths.length - 1; i++){
-                    let xDist = Math.abs(currentPaths[i].x - currentPaths[i].lastx);
-                    let yDist = Math.abs(currentPaths[i].y - currentPaths[i].lasty);
-
-                    //Vertical line out of place
-                    if(xDist < toleranceX && yDist > toleranceY){
-                        currentPaths[i+1].lastx = currentPaths[i-1].x;
-                        currentPaths[i+1].lasty = currentPaths[i-1].y;
-                        currentPaths.splice(i, 1);
-                    }
-
-                    //Horizontal line out of place
-                    if(yDist < toleranceY && xDist > toleranceX){
-                        currentPaths[i+1].lastx = currentPaths[i-1].x;
-                        currentPaths[i+1].lasty = currentPaths[i-1].y;
-                        currentPaths.splice(i, 1);
-                    }
-                }
-
-                for(let i = 0; i < currentPaths.length; i++){
-                    //Send data to server
-                    socket.emit("draw", currentPaths[i]);
-                    paths.push(currentPaths[i]);
-                }
-
-                Drag(canvas, ctx);
-                currentPaths = [];
-            }
-
-            //Draw a line
-            function DrawPath(lastx, lasty, x, y, size, color){
-                let data = {
-                    x: x,
-                    y:  y,
-                    lastx:  lastx,
-                    lasty:  lasty,
-                    size:  size,
-                    color:  color
-                };
-    
-                ctx.strokeStyle = data.color;
-                ctx.lineWidth = data.size/zoomFactor;
-                ctx.lineCap = "round";
-                ctx.beginPath();
-                ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
-                ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
-                ctx.stroke();
-                ctx.closePath();
-            }
-
-            //Canvas drag
-            function Drag(){
-                ctx.clearRect(0,0, canvas.width, canvas.height);
-                for(let i = 0; i < paths.length; i++){
-                    DrawPath(paths[i].lastx,paths[i].lasty,paths[i].x,paths[i].y,paths[i].size,paths[i].color);
-                }
-            }
-
             //Server canvas init
             function InitCanvas(existingCanvas){
                 for(let i = 0; i < existingCanvas.length; i++){
-                    paths.push(existingCanvas[i]);
-                    DrawPath(existingCanvas[i].lastx, existingCanvas[i].lasty, existingCanvas[i].x, existingCanvas[i].y, existingCanvas[i].size, existingCanvas[i].color);
+                    currentPen.paths.push(existingCanvas[i]);
+                    currentPen.DrawPath(existingCanvas[i].lastx, existingCanvas[i].lasty, existingCanvas[i].x, existingCanvas[i].y, existingCanvas[i].size, existingCanvas[i].color, worldOrigin, zoomFactor);
                 }
             }
 
@@ -277,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function(){
             function ResizeCanvas(){
                 canvas.height = window.innerHeight - document.querySelector('#cursor-helper').offsetTop;
                 canvas.width = document.body.clientWidth;
-                Drag();
+                currentPen.ReDraw(worldOrigin, zoomFactor);
             }
 
             //Export paths in json format
@@ -304,8 +200,8 @@ document.addEventListener('DOMContentLoaded', function(){
                     reader.onloadend = function(){
                         let jsonResult = JSON.parse(reader.result);
                         for(let i = 0;i < jsonResult.paths.length; i++){
-                            DrawPath(jsonResult.paths[i].lastx, jsonResult.paths[i].lasty, jsonResult.paths[i].x, jsonResult.paths[i].y, jsonResult.paths[i].size, jsonResult.paths[i].color);
-                            paths.push(jsonResult.paths[i]);
+                            currentPen.DrawPath(jsonResult.paths[i].lastx, jsonResult.paths[i].lasty, jsonResult.paths[i].x, jsonResult.paths[i].y, jsonResult.paths[i].size, jsonResult.paths[i].color, worldOrigin, zoomFactor);
+                            currentPen.paths.push(jsonResult.paths[i]);
                             socket.emit('draw', jsonResult.paths[i]);
                         }
                     }
@@ -326,27 +222,13 @@ document.addEventListener('DOMContentLoaded', function(){
     
             //Listening to other user draws/paths
             socket.on("draw", (data) => {
-                paths.push(data);
-                ctx.strokeStyle = data.color;
-                ctx.lineWidth = data.size/zoomFactor;
-                ctx.lineCap = "round";
-                ctx.beginPath();
-                ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
-                ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
-                ctx.stroke();
-                ctx.closePath();
+                currentPen.paths.push(data);
+                currentPen.DrawPath(data.lastx, data.lasty, data.x, data.y, data.size, data.color, worldOrigin, zoomFactor);
             });
 
             socket.on('erase', (data) =>{
-                paths.push(data);
-                ctx.strokeStyle = data.color;
-                ctx.lineWidth = data.size/zoomFactor;
-                ctx.lineCap = "round";
-                ctx.beginPath();
-                ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
-                ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
-                ctx.stroke();
-                ctx.closePath();
+                currentPen.paths.push(data);
+                currentPen.DrawPath(data.lastx, data.lasty, data.x, data.y, data.size, data.color, worldOrigin, zoomFactor);
             });
 
             //Listen to when a new user joins/leaves the room
@@ -363,9 +245,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             socket.on("usrMute", (data)=>{
                 let userName = userPrefix + data.user
-                console.log(userName);
                 let mute = usrList.querySelector('#' + userName).querySelector('#mute-btn');
-                console.log(mute);
                 if(mute){
                     if(mute.classList.contains('active-btn')){
                         mute.classList.remove('active-btn');
@@ -389,10 +269,10 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             canvas.addEventListener('mousedown', function(event){
-                if(event.buttons === 1){
+                if(event.buttons === 1 && !isMuted){
                     //Set the first drawing coord
-                    lastCoord = {x: event.clientX, y: event.clientY};
-                    Draw(event, drawColor, drawSize);
+                    currentPen.lastCoord = {x: event.clientX, y: event.clientY};
+                    currentPen.Draw(event, worldOrigin, zoomFactor);
                 }else if(event.buttons === 2){
                     //Set the last world coord
                     const rect = canvas.getBoundingClientRect();
@@ -408,14 +288,14 @@ document.addEventListener('DOMContentLoaded', function(){
 
             //Draw, erase or drag while moving mouse
             canvas.addEventListener('mousemove', function(event){
-                if(event.buttons === 1){
-                    Draw(event, drawColor, drawSize);
+                if(event.buttons === 1 && !isMuted){
+                    currentPen.Draw(event, worldOrigin, zoomFactor);
                 }else if(event.buttons === 2){
                     const rect = canvas.getBoundingClientRect();
                     worldOrigin.x = worldOrigin.x + (event.clientX - rect.left - lastWorldCoord.x);
                     worldOrigin.y = worldOrigin.y + (event.clientY - rect.top - lastWorldCoord.y);
 
-                    Drag();
+                    currentPen.ReDraw(worldOrigin, zoomFactor);
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
 
@@ -423,13 +303,12 @@ document.addEventListener('DOMContentLoaded', function(){
             });
     
             canvas.addEventListener('mouseup', function(event){
-                if(event.button === 0){
-                    //Draw(canvas, event, drawColor, drawSize);
-                    OptimizeDraw();
+                if(event.button === 0 && !isMuted){
+                    currentPen.OptimizeDraw(worldOrigin, zoomFactor);
                 }else if(event.button === 2){
                     cursor.ShowCursor();
                 }
-            });
+0            });
 
             canvas.addEventListener('mouseout', function(){
                 cursor.HideCursor();
@@ -453,28 +332,34 @@ document.addEventListener('DOMContentLoaded', function(){
                 switch(event.target.value){
                     case 'eraser':
                         drawCursor = "crosshair";
-                        drawColor = "white";
+                        currentPen.color = "white";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         break;
                     case 'marker':
-                        drawColor = "black";
+                        currentPen.color = "black";
+                        currentTool.classList.remove("active-btn");
+                        event.target.classList.add("active-btn");
+                        OpenColors();
+                        break;
+                    case 'text':
+                        currentPen.color = "black";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
                     case 'drawAdd':
-                        drawSize += 1;
-                        document.querySelector('#drawSize-container').value = drawSize;
-                        cursor.SetSize(drawSize);
+                        currentPen.size += 1;
+                        document.querySelector('#drawSize-container').value = currentPen.size;
+                        cursor.SetSize(currentPen.size);
                         break;
                     case 'drawRemove':
-                        drawSize -= 1;
-                        if(drawSize <= 0){
-                            drawSize = 1;
+                        currentPen.size -= 1;
+                        if(currentPen.size <= 0){
+                            currentPen.size = 1;
                         }
-                        document.querySelector('#drawSize-container').value = drawSize;
-                        cursor.SetSize(drawSize);
+                        document.querySelector('#drawSize-container').value = currentPen.size;
+                        cursor.SetSize(currentPen.size);
                         break;
                     default:
                         break;
@@ -484,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function(){
             document.querySelector('#colors-container').addEventListener('click', function(event){
                 event.stopPropagation();
                 if(event.target.tagName.toLowerCase() === "button"){
-                    drawColor = event.target.value;
+                    currentPen.color = event.target.value;
                     OpenColors();
                 }
             });
@@ -498,14 +383,14 @@ document.addEventListener('DOMContentLoaded', function(){
                         if(zoomFactor >= 2){
                             zoomFactor = 2;
                         }
-                        Drag();
+                        currentPen.ReDraw(worldOrigin, zoomFactor);
                         break;
                     case 'zoomIn':
                         zoomFactor -= 0.1;
                         if(zoomFactor <= 0.1){
                             zoomFactor = 0.1;
                         }
-                        Drag();
+                        currentPen.ReDraw(worldOrigin, zoomFactor);
                         break;
                     default:
                         break;
@@ -514,11 +399,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
             document.querySelector('#drawSize-container').addEventListener('input', function(event){
                 if(!isNaN(event.target.value) && event.target.value > 0){
-                    drawSize = event.target.value;
+                    currentPen.size = event.target.value;
                 }else{
-                    event.target.value = drawSize;
+                    event.target.value = currentPen.size;
                 }
-                cursor.SetSize(drawSize);
+                cursor.SetSize(currentPen.size);
             });
 
             //Mute, kick and mute all buttons
@@ -555,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         break;
                     case 'export-btn':
                         let downloadedPaths = {
-                            paths: paths
+                            paths: currentPen.paths
                         }
                         DownloadPaths(downloadedPaths, 'discordCanvas');
                         break;
@@ -570,13 +455,14 @@ document.addEventListener('DOMContentLoaded', function(){
 
             importBtn.addEventListener('change', ImportPaths);
             
-            cursor.ChangeCursor('marker', drawSize);
+            cursor.ChangeCursor('marker', currentPen.size);
             //cursor.ShowCursor();
 
-            document.querySelector('#drawSize-container').value = drawSize;
+            document.querySelector('#drawSize-container').value = currentPen.size;
             document.body.querySelector('main').appendChild(canvas);
             document.body.querySelector('.menus-container').style.display = "block";
             joinForm.parentNode.removeChild(joinForm);
+
             ResizeCanvas(canvas);
         });
     }();

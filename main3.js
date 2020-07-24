@@ -259,6 +259,7 @@ io.on("connection", (socket) =>{
     //On user draw
     /*
         Data payload:
+        -type: specifies the type of drawing (path, text)
         -x: x representing the horizontal coordinate of the pixel
         -y: y representing the vertical coordinate of the pixel
         -lastx: x representing the start of the draw

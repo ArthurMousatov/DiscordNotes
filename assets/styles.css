@@ -30,6 +30,15 @@ main{
     display: none;
 }
 
+/* Pen styles */
+#textArea-input{
+    position: absolute;
+    width: 200px;
+    height: 100px;
+    background-color: transparent;
+    border-color: teal;
+}
+
 /* User actions styles */
 #tools-container{
     position: fixed;
