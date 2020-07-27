@@ -37,6 +37,8 @@ main{
     height: 100px;
     background-color: transparent;
     border-color: teal;
+    border-radius: 1px;
+    text-align: left;
 }
 
 /* User actions styles */

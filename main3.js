@@ -280,7 +280,7 @@ io.on("connection", (socket) =>{
             drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
 
             //save the pixel data into canvas array
-            drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
+            drawRooms[socket.index]['canvas'].push(data);
         }
     });
 

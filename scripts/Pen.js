@@ -1,4 +1,11 @@
 function Pen(size, color, pathEnd, canvas, socket){
+    this.worldOrigin = {
+        x: 0,
+        y: 0
+    }
+    this.zoomFactor = 1;
+
+    this.currentType = "path";
     this.socket = socket;
     this.size = size;
     this.color = color
@@ -16,38 +23,64 @@ function Pen(size, color, pathEnd, canvas, socket){
     this.textArea = null;
 }
 
+Pen.prototype.DrawRequest = function(drawPoint){
+    switch(drawPoint.event){
+        case 'path':
+            this.paths.push(drawPoint);
+            this.DrawPath(drawPoint.lastx, drawPoint.lasty, drawPoint.x, drawPoint.y, drawPoint.size, drawPoint.color);
+            break;
+        case 'text':
+            this.paths.push(drawPoint);
+            this.DrawText(drawPoint);
+            break;
+        default:
+            break;
+    }
+}
+
 //Client draw
-Pen.prototype.Draw =  function(event, worldOrigin, zoomFactor){
+Pen.prototype.Draw =  function(event){
     const rect = this.canvas.getBoundingClientRect();
-    const lastx = this.lastCoord.x - rect.left;
-    const lasty = this.lastCoord.y - rect.top;
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    this.ctx.strokeStyle = this.color;
-    this.ctx.lineWidth = this.size/zoomFactor;
-    this.ctx.lineCap = "round";
-    this.ctx.beginPath();
-    this.ctx.moveTo(lastx, lasty);
-    this.ctx.lineTo(x,y);
-    this.ctx.stroke();
-    this.ctx.closePath();
+    switch(this.currentType){
+        case 'path':
+            const lastx = this.lastCoord.x - rect.left;
+            const lasty = this.lastCoord.y - rect.top;
 
-    let data = {
-        x: (x * zoomFactor + worldOrigin.x * -1),
-        y:  (y * zoomFactor + worldOrigin.y * -1),
-        lastx:  (lastx * zoomFactor + worldOrigin.x * -1),
-        lasty:  (lasty * zoomFactor + worldOrigin.y * -1),
-        size:  this.size,
-        color:  this.color
-    };
-    this.currentPaths.push(data);
+            this.ctx.strokeStyle = this.color;
+            this.ctx.lineWidth = this.size/this.zoomFactor;
+            this.ctx.lineCap = "round";
+            this.ctx.beginPath();
+            this.ctx.moveTo(lastx, lasty);
+            this.ctx.lineTo(x,y);
+            this.ctx.stroke();
+            this.ctx.closePath();
 
-    this.lastCoord= {x: event.clientX, y: event.clientY};
+            let data = {
+                x: (x * this.zoomFactor + this.worldOrigin.x * -1),
+                y:  (y * this.zoomFactor + this.worldOrigin.y * -1),
+                lastx:  (lastx * this.zoomFactor + this.worldOrigin.x * -1),
+                lasty:  (lasty * this.zoomFactor + this.worldOrigin.y * -1),
+                size:  this.size,
+                color:  this.color,
+                event: 'path'
+            };
+            this.currentPaths.push(data);
+
+            this.lastCoord= {x: event.clientX, y: event.clientY};
+            break;
+        case 'text':
+            this.CreateText(x, y);
+            break;
+        default:
+            break;
+    }
 }
 
 //Client draw optimize
-Pen.prototype.OptimizeDraw =  function(worldOrigin, zoomFactor){
+Pen.prototype.OptimizeDraw =  function(){
     let toleranceX = 150;
     let toleranceY = 40;
 
@@ -76,19 +109,27 @@ Pen.prototype.OptimizeDraw =  function(worldOrigin, zoomFactor){
         this.paths.push(this.currentPaths[i]);
     }
 
-    this.ReDraw(worldOrigin, zoomFactor);
+    this.ReDraw();
     this.currentPaths = [];
 }
 
-Pen.prototype.ReDraw = function(worldOrigin, zoomFactor){
+Pen.prototype.ReDraw = function(){
     this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
     for(let i = 0; i < this.paths.length; i++){
-        this.DrawPath(this.paths[i].lastx,this.paths[i].lasty,this.paths[i].x,this.paths[i].y,this.paths[i].size,this.paths[i].color, worldOrigin, zoomFactor);
+        switch(this.paths[i].event){
+            case 'path':
+                this.DrawPath(this.paths[i].lastx,this.paths[i].lasty,this.paths[i].x,this.paths[i].y,this.paths[i].size,this.paths[i].color);
+                break;
+            case 'text':
+                this.DrawText(this.paths[i]);
+                break;
+            default:
+                break;
+        }
     }
 }
 
-//Draw a line
-Pen.prototype.DrawPath = function(lastx, lasty, x, y, size, color, worldOrigin, zoomFactor){
+Pen.prototype.DrawPath = function(lastx, lasty, x, y, size, color){
     let data = {
         x: x,
         y:  y,
@@ -99,25 +140,50 @@ Pen.prototype.DrawPath = function(lastx, lasty, x, y, size, color, worldOrigin, 
     };
 
     this.ctx.strokeStyle = data.color;
-    this.ctx.lineWidth = data.size/zoomFactor;
+    this.ctx.lineWidth = data.size/this.zoomFactor;
     this.ctx.lineCap = "round";
     this.ctx.beginPath();
-    this.ctx.moveTo((data.lastx + worldOrigin.x)/zoomFactor, (data.lasty + worldOrigin.y)/zoomFactor);
-    this.ctx.lineTo((data.x + worldOrigin.x)/zoomFactor, (data.y + worldOrigin.y)/zoomFactor);
+    this.ctx.moveTo((data.lastx + this.worldOrigin.x)/this.zoomFactor, (data.lasty + this.worldOrigin.y)/this.zoomFactor);
+    this.ctx.lineTo((data.x + this.worldOrigin.x)/this.zoomFactor, (data.y + this.worldOrigin.y)/this.zoomFactor);
     this.ctx.stroke();
     this.ctx.closePath();
 }
 
-Pen.prototype.DrawText = function(x, y){
+Pen.prototype.DrawText = function(data){
+    this.ctx.font = (data.size/this.zoomFactor) + "px " + data.font;
+    this.ctx.fillStyle = data.color;
+    this.ctx.fillText(data.value, (data.x + this.worldOrigin.x)/this.zoomFactor, (data.y + this.worldOrigin.y)/this.zoomFactor)
+}
+
+Pen.prototype.CreateText = function(x, y){
     if(!this.textArea){
-        this.textArea.remove();
         this.textArea = document.createElement('textarea');
         this.textArea.id = 'textArea-input';
         this.textArea.style.top = y + 'px';
         this.textArea.style.left = x + 'px';
-        this.textArea.addEventListener('keydown', function(event){
+        this.textArea.addEventListener('keydown' , (event) =>{
             if(event.code === "Enter"){
-                
+                let textX = parseFloat(this.textArea.style.left) || 0;
+                let textY = parseFloat(this.textArea.style.top) || 0;
+                let data = {
+                    x: (textX * this.zoomFactor + this.worldOrigin.x * -1),
+                    y: (textY* this.zoomFactor + this.worldOrigin.y * -1),
+                    size: this.size,
+                    color: this.color,
+                    font: this.fontStyle,
+                    value: this.textArea.value,
+                    event: 'text'
+                }
+
+                this.ctx.font = this.size + "px " + this.fontStyle;
+                this.ctx.fillStyle = this.color;
+                this.ctx.fillText(this.textArea.value, textX, textY);
+
+                this.paths.push(data);
+                this.socket.emit('draw', data);
+
+                this.textArea.remove();
+                this.textArea = null;
             }
         });
         document.querySelector('main').appendChild(this.textArea);
