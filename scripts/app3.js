@@ -1,8 +1,11 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
-        //const socket = io.connect('http://localhost:3000/')
-        const socket = io.connect('https://discord-notes.herokuapp.com/');
+        let connectQuery = {
+            query: 'room=' + document.querySelector('#roomCode').innerHTML
+        };
+        //const socket = io.connect('http://localhost:3000/', connectQuery);
+        const socket = io.connect('https://discord-notes.herokuapp.com/', connectQuery);
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -139,6 +142,11 @@ document.addEventListener('DOMContentLoaded', function(){
             }else{
                 usrList.style.display = "none";
             }
+        });
+
+        //If connected room doesn't exist
+        socket.on("badRoom", () => {
+            window.location.href = '/';
         });
     
         //Failure joining a room
@@ -316,21 +324,21 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 switch(event.target.value){
                     case 'eraser':
-                        currentPen.currentType = 'path';
+                        currentPen.ChangeType('path');
                         drawCursor = "crosshair";
                         currentPen.color = "white";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         break;
                     case 'marker':
-                        currentPen.currentType = 'path'
+                        currentPen.ChangeType('path');
                         currentPen.color = "black";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
                     case 'text':
-                        currentPen.currentType = 'text';
+                        currentPen.ChangeType('text');
                         currentPen.color = "black";
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
@@ -371,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         if(currentPen.zoomFactor >= 2){
                             currentPen.zoomFactor = 2;
                         }
-                        currentPen.currentPen.ReDraw();
+                        currentPen.ReDraw();
                         break;
                     case 'zoomIn':
                         currentPen.zoomFactor -= 0.1;

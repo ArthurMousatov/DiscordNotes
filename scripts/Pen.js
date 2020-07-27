@@ -38,6 +38,14 @@ Pen.prototype.DrawRequest = function(drawPoint){
     }
 }
 
+Pen.prototype.ChangeType = function(newType){
+    this.currentType = newType;
+    if(this.textArea){
+        this.textArea.remove();
+    }
+    
+}
+
 //Client draw
 Pen.prototype.Draw =  function(event){
     const rect = this.canvas.getBoundingClientRect();

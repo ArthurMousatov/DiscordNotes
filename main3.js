@@ -191,174 +191,177 @@ app.post('/board', urlEncodedParser, function(req, res){
 
 //On user connection
 io.on("connection", (socket) =>{
+    if(RoomSearch(socket.handshake.query.room, drawRooms) !== null){
+        //Connect socket to a room
+        socket.on("joinRoom", (data) =>{
 
-    //Connect socket to a room
-    socket.on("joinRoom", (data) =>{
+            //Check if room exists
+            let currentRoomIndex = RoomSearch(data.room, drawRooms);
+            if(currentRoomIndex != null){
+                socket.room = data.room;
+                socket.isMuted = false;
+                let user = sanitizer.value(data.user, 'str');
 
-        //Check if room exists
-        let currentRoomIndex = RoomSearch(data.room, drawRooms);
-        if(currentRoomIndex != null){
-            socket.room = data.room;
-            socket.isMuted = false;
-            let user = sanitizer.value(data.user, 'str');
-
-            //Check if name is not unique
-            if(isNameFree(user, drawRooms[currentRoomIndex]['users'])){
-                socket.username = user;
-            }else{
-                let counter = 0;
-                let name = user + String(counter);
-
-                //While name is not unique
-                while(!isNameFree(name, drawRooms[currentRoomIndex]['users'])){
-                    counter++;
-                    name = user + String(counter);
-                }
-                socket.username = name;
-            }
-            socket.index = currentRoomIndex;
-            
-            //Get the room's current users
-            let users = GetNames(drawRooms[currentRoomIndex]['users']);
-
-            //Check if user has matching host id
-            if(data.host !== undefined){
-                if(drawRooms[currentRoomIndex]['host'] === data.host){
-                    socket.isHost = true;
+                //Check if name is not unique
+                if(isNameFree(user, drawRooms[currentRoomIndex]['users'])){
+                    socket.username = user;
                 }else{
-                    return socket.emit("err", "Error, wrong host ID: " + data.host);
+                    let counter = 0;
+                    let name = user + String(counter);
+
+                    //While name is not unique
+                    while(!isNameFree(name, drawRooms[currentRoomIndex]['users'])){
+                        counter++;
+                        name = user + String(counter);
+                    }
+                    socket.username = name;
                 }
-            }else{
-                socket.isHost = false;
-            }
-
-            socket.join(data.room);
-            drawRooms[currentRoomIndex]['users'].push(socket);
-
-            //Send the new user info to other sockets
-            let sendData = {
-                user: socket.username,
-                isHost: socket.isHost,
-            };
-
-            socket.to(socket.room).emit("usrJoin", sendData);
-
-            //Send the room's current users + canvas to the new user
-            sendData = {
-                canvas: drawRooms[socket.index]['canvas'],
-                users: users,
-                isHost: socket.isHost
-            };
-
-            return socket.emit("suc", sendData);
-        }else{
-            return socket.emit("err", "Error, No Room with code: " + data.room);
-        }
-    });
-
-    //On user draw
-    /*
-        Data payload:
-        -type: specifies the type of drawing (path, text)
-        -x: x representing the horizontal coordinate of the pixel
-        -y: y representing the vertical coordinate of the pixel
-        -lastx: x representing the start of the draw
-        -lasty: y representing the start of the draw
-        -size: size of the pixel
-        -color: color of the pixel
-    */
-
-    socket.on("draw", (data) =>{
-        if(!socket.isMuted && drawRooms[socket.index]['canvas']){ 
-            socket.to(socket.room).emit("draw", data);
-            
-            //Reset timeOut
-            let timeOutInfo = {
-                room: drawRooms[socket.index]['room']
-            };
-            clearInterval(drawRooms[socket.index]['timeOut']);
-            drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
-
-            //save the pixel data into canvas array
-            drawRooms[socket.index]['canvas'].push(data);
-        }
-    });
-
-    socket.on("erase", (data) =>{
-        if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){
-            socket.to(socket.room).emit('erase', data);
-
-            //Reset timeOut
-            let timeOutInfo = {
-                room: drawRooms[socket.index]['room']
-            };
-            clearInterval(drawRooms[socket.index]['timeOut']);
-            drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
-
-            //save the pixel data into canvas array
-            drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
-        }
-    });
-
-    socket.on("usrKick", (data) => {
-        //If socket is a host
-        if(socket.isHost){
-            console.log("Kicking " + data.user);
-            let kickedSocket = GetSocket(data.user, drawRooms[socket.index]['users']);
-            
-            if(kickedSocket !== null){
-                kickedSocket.emit('kicked');
-                kickedSocket.leave(socket.room);
-
-                // let data = {
-                //     user: kickedSocket.username
-                // };
-                // kickedSocket.to(kickedSocket.room).emit("usrLeft", data);
-
-                // let kickedSocketIndex = drawRooms[kickedSocket.index]['users'].indexOf(kickedSocket);
-                // drawRooms[kickedSocket.index]['users'].splice(kickedSocketIndex, 1);
-            }
-        }
-    });
-
-    socket.on("usrMute", (data) => {
-        if(socket.isHost){
-            let muteSocket = GetSocket(data.user, drawRooms[socket.index]['users']);
-
-            if(muteSocket !== null && !muteSocket.isHost){
-                muteSocket.isMuted = !muteSocket.isMuted;
-                muteSocket.emit("mute");
+                socket.index = currentRoomIndex;
                 
-                let data = {
-                    user: muteSocket.username
-                };
-                muteSocket.to(muteSocket.room).emit("usrMute", data);
-            }
-        }
-    });
+                //Get the room's current users
+                let users = GetNames(drawRooms[currentRoomIndex]['users']);
 
-    //On user disconnection
-    socket.on("disconnect", () => {
-        let currentRoomIndex = RoomSearch(socket.room, drawRooms);
-
-        //Check if room actually exists
-        if(currentRoomIndex != null){
-
-            //Delete user's socket from the room's socket array
-            let socketIndex = drawRooms[currentRoomIndex]['users'].indexOf(socket);
-            drawRooms[currentRoomIndex]['users'].splice(socketIndex, 1);
-
-            //If room doesn't have any other user, delete the room
-            if(drawRooms[currentRoomIndex]['users'].length === 0){
-                console.log("Room has no users, proceeding to delete");
-                clearInterval(drawRooms[currentRoomIndex]['timeOut']);
-                drawRooms.splice(currentRoomIndex, 1);
-            }else{
-                let data = {
-                    user: socket.username
+                //Check if user has matching host id
+                if(data.host !== undefined){
+                    if(drawRooms[currentRoomIndex]['host'] === data.host){
+                        socket.isHost = true;
+                    }else{
+                        return socket.emit("err", "Error, wrong host ID: " + data.host);
+                    }
+                }else{
+                    socket.isHost = false;
                 }
-                socket.to(socket.room).emit("usrLeft", data);
+
+                socket.join(data.room);
+                drawRooms[currentRoomIndex]['users'].push(socket);
+
+                //Send the new user info to other sockets
+                let sendData = {
+                    user: socket.username,
+                    isHost: socket.isHost,
+                };
+
+                socket.to(socket.room).emit("usrJoin", sendData);
+
+                //Send the room's current users + canvas to the new user
+                sendData = {
+                    canvas: drawRooms[socket.index]['canvas'],
+                    users: users,
+                    isHost: socket.isHost
+                };
+
+                return socket.emit("suc", sendData);
+            }else{
+                return socket.emit("err", "Error, No Room with code: " + data.room);
             }
-        }
-    });
+        });
+
+        //On user draw
+        /*
+            Data payload:
+            -type: specifies the type of drawing (path, text)
+            -x: x representing the horizontal coordinate of the pixel
+            -y: y representing the vertical coordinate of the pixel
+            -lastx: x representing the start of the draw
+            -lasty: y representing the start of the draw
+            -size: size of the pixel
+            -color: color of the pixel
+        */
+
+        socket.on("draw", (data) =>{
+            if(!socket.isMuted && drawRooms[socket.index]['canvas']){ 
+                socket.to(socket.room).emit("draw", data);
+                
+                //Reset timeOut
+                let timeOutInfo = {
+                    room: drawRooms[socket.index]['room']
+                };
+                clearInterval(drawRooms[socket.index]['timeOut']);
+                drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                //save the pixel data into canvas array
+                drawRooms[socket.index]['canvas'].push(data);
+            }
+        });
+
+        socket.on("erase", (data) =>{
+            if(!socket.isMuted && drawRooms[socket.index]['canvas'] != undefined){
+                socket.to(socket.room).emit('erase', data);
+
+                //Reset timeOut
+                let timeOutInfo = {
+                    room: drawRooms[socket.index]['room']
+                };
+                clearInterval(drawRooms[socket.index]['timeOut']);
+                drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                //save the pixel data into canvas array
+                drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
+            }
+        });
+
+        socket.on("usrKick", (data) => {
+            //If socket is a host
+            if(socket.isHost){
+                console.log("Kicking " + data.user);
+                let kickedSocket = GetSocket(data.user, drawRooms[socket.index]['users']);
+                
+                if(kickedSocket !== null){
+                    kickedSocket.emit('kicked');
+                    kickedSocket.leave(socket.room);
+
+                    // let data = {
+                    //     user: kickedSocket.username
+                    // };
+                    // kickedSocket.to(kickedSocket.room).emit("usrLeft", data);
+
+                    // let kickedSocketIndex = drawRooms[kickedSocket.index]['users'].indexOf(kickedSocket);
+                    // drawRooms[kickedSocket.index]['users'].splice(kickedSocketIndex, 1);
+                }
+            }
+        });
+
+        socket.on("usrMute", (data) => {
+            if(socket.isHost){
+                let muteSocket = GetSocket(data.user, drawRooms[socket.index]['users']);
+
+                if(muteSocket !== null && !muteSocket.isHost){
+                    muteSocket.isMuted = !muteSocket.isMuted;
+                    muteSocket.emit("mute");
+                    
+                    let data = {
+                        user: muteSocket.username
+                    };
+                    muteSocket.to(muteSocket.room).emit("usrMute", data);
+                }
+            }
+        });
+
+        //On user disconnection
+        socket.on("disconnect", () => {
+            let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+
+            //Check if room actually exists
+            if(currentRoomIndex != null){
+
+                //Delete user's socket from the room's socket array
+                let socketIndex = drawRooms[currentRoomIndex]['users'].indexOf(socket);
+                drawRooms[currentRoomIndex]['users'].splice(socketIndex, 1);
+
+                //If room doesn't have any other user, delete the room
+                if(drawRooms[currentRoomIndex]['users'].length === 0){
+                    console.log("Room has no users, proceeding to delete");
+                    clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+                    drawRooms.splice(currentRoomIndex, 1);
+                }else{
+                    let data = {
+                        user: socket.username
+                    }
+                    socket.to(socket.room).emit("usrLeft", data);
+                }
+            }
+        });
+    }else{
+        socket.emit("badRoom");
+    }
 });
