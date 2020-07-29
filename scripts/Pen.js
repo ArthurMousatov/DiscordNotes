@@ -5,8 +5,11 @@ function Pen(size, color, pathEnd, canvas, socket){
     }
     this.zoomFactor = 1;
 
-    this.currentType = "path";
+    this.currentType = "marker";
     this.socket = socket;
+    this.fontSize = size;
+    this.eraserSize = size;
+    this.markerSize = size;
     this.size = size;
     this.color = color
     this.pathEnd = pathEnd;
@@ -23,9 +26,68 @@ function Pen(size, color, pathEnd, canvas, socket){
     this.textArea = null;
 }
 
+Pen.prototype.ChangeSize = function(newSize){
+    switch(this.currentType){
+        case 'eraser':
+            if(newSize <= 0 || newSize > 30){
+                this.size = 1;
+                this.eraserSize = 1;
+            }else{
+                this.size = newSize;
+                this.eraserSize = newSize;
+            }
+            break;
+        case 'marker':
+            if(newSize <= 0 || newSize > 30){
+                this.size = 1;
+                this.markerSize = 1;
+            }else{
+                this.size = newSize;
+                this.markerSize = newSize;
+            }
+            break;
+        case 'text':
+            if(newSize <= 0 || newSize > 20){
+                this.size = 1;
+                this.fontSize = 1;
+            }else{
+                this.size = newSize;
+                this.fontSize = newSize;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+Pen.prototype.ChangeType = function(newType){
+    this.currentType = newType;
+    switch(newType){
+        case 'eraser':
+            this.size = this.eraserSize;
+            break;
+        case 'marker':
+            this.size = this.markerSize;
+            break;
+        case 'text':
+            this.size = this.fontSize;
+            break;
+        default:
+            break;
+    }
+    if(this.textArea){
+        this.textArea.remove();
+    }
+    
+}
+
 Pen.prototype.DrawRequest = function(drawPoint){
     switch(drawPoint.event){
-        case 'path':
+        case 'eraser':
+            this.paths.push(drawPoint);
+            this.DrawPath(drawPoint.lastx, drawPoint.lasty, drawPoint.x, drawPoint.y, drawPoint.size, drawPoint.color);
+            break;
+        case 'marker':
             this.paths.push(drawPoint);
             this.DrawPath(drawPoint.lastx, drawPoint.lasty, drawPoint.x, drawPoint.y, drawPoint.size, drawPoint.color);
             break;
@@ -38,14 +100,6 @@ Pen.prototype.DrawRequest = function(drawPoint){
     }
 }
 
-Pen.prototype.ChangeType = function(newType){
-    this.currentType = newType;
-    if(this.textArea){
-        this.textArea.remove();
-    }
-    
-}
-
 //Client draw
 Pen.prototype.Draw =  function(event){
     const rect = this.canvas.getBoundingClientRect();
@@ -53,10 +107,9 @@ Pen.prototype.Draw =  function(event){
     const y = event.clientY - rect.top;
 
     switch(this.currentType){
-        case 'path':
+        case 'eraser':{
             const lastx = this.lastCoord.x - rect.left;
             const lasty = this.lastCoord.y - rect.top;
-
             this.ctx.strokeStyle = this.color;
             this.ctx.lineWidth = this.size/this.zoomFactor;
             this.ctx.lineCap = "round";
@@ -73,12 +126,39 @@ Pen.prototype.Draw =  function(event){
                 lasty:  (lasty * this.zoomFactor + this.worldOrigin.y * -1),
                 size:  this.size,
                 color:  this.color,
-                event: 'path'
+                event: 'eraser'
             };
             this.currentPaths.push(data);
 
             this.lastCoord= {x: event.clientX, y: event.clientY};
             break;
+        }
+        case 'marker':{
+            const lastx = this.lastCoord.x - rect.left;
+            const lasty = this.lastCoord.y - rect.top;
+            this.ctx.strokeStyle = this.color;
+            this.ctx.lineWidth = this.size/this.zoomFactor;
+            this.ctx.lineCap = "round";
+            this.ctx.beginPath();
+            this.ctx.moveTo(lastx, lasty);
+            this.ctx.lineTo(x,y);
+            this.ctx.stroke();
+            this.ctx.closePath();
+
+            let data = {
+                x: (x * this.zoomFactor + this.worldOrigin.x * -1),
+                y:  (y * this.zoomFactor + this.worldOrigin.y * -1),
+                lastx:  (lastx * this.zoomFactor + this.worldOrigin.x * -1),
+                lasty:  (lasty * this.zoomFactor + this.worldOrigin.y * -1),
+                size:  this.size,
+                color:  this.color,
+                event: 'marker'
+            };
+            this.currentPaths.push(data);
+
+            this.lastCoord= {x: event.clientX, y: event.clientY};
+            break;
+        }
         case 'text':
             this.CreateText(x, y);
             break;
@@ -125,7 +205,10 @@ Pen.prototype.ReDraw = function(){
     this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
     for(let i = 0; i < this.paths.length; i++){
         switch(this.paths[i].event){
-            case 'path':
+            case 'eraser':
+                this.DrawPath(this.paths[i].lastx,this.paths[i].lasty,this.paths[i].x,this.paths[i].y,this.paths[i].size,this.paths[i].color);
+                break;
+            case 'marker':
                 this.DrawPath(this.paths[i].lastx,this.paths[i].lasty,this.paths[i].x,this.paths[i].y,this.paths[i].size,this.paths[i].color);
                 break;
             case 'text':
@@ -165,14 +248,17 @@ Pen.prototype.DrawText = function(data){
 
 Pen.prototype.CreateText = function(x, y){
     if(!this.textArea){
-        this.textArea = document.createElement('textarea');
+        this.textArea = document.createElement('input');
+        this.textArea.placeholder = "Start Typing!";
         this.textArea.id = 'textArea-input';
-        this.textArea.style.top = y + 'px';
+        this.textArea.style.fontSize = this.size + 'px';
+        this.textArea.style.height = (this.size + 20) + 'px';
+        this.textArea.style.top = (y - this.size) + 'px';
         this.textArea.style.left = x + 'px';
         this.textArea.addEventListener('keydown' , (event) =>{
             if(event.code === "Enter"){
                 let textX = parseFloat(this.textArea.style.left) || 0;
-                let textY = parseFloat(this.textArea.style.top) || 0;
+                let textY = parseFloat(this.textArea.style.top) + this.size + 10 || 0;
                 let data = {
                     x: (textX * this.zoomFactor + this.worldOrigin.x * -1),
                     y: (textY* this.zoomFactor + this.worldOrigin.y * -1),
@@ -196,7 +282,9 @@ Pen.prototype.CreateText = function(x, y){
         });
         document.querySelector('main').appendChild(this.textArea);
     }else{
-        this.textArea.style.top = y + 'px';
+        this.textArea.style.fontSize = this.size + 'px';
+        this.textArea.style.height = (this.size + 20) + 'px';
+        this.textArea.style.top = (y - this.size)  + 'px';
         this.textArea.style.left = x + 'px';
         this.textArea.value = "";
     }

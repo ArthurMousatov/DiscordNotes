@@ -194,8 +194,7 @@ document.addEventListener('DOMContentLoaded', function(){
                     reader.onloadend = function(){
                         let jsonResult = JSON.parse(reader.result);
                         for(let i = 0;i < jsonResult.paths.length; i++){
-                            currentPen.DrawPath(jsonResult.paths[i].lastx, jsonResult.paths[i].lasty, jsonResult.paths[i].x, jsonResult.paths[i].y, jsonResult.paths[i].size, jsonResult.paths[i].color);
-                            currentPen.paths.push(jsonResult.paths[i]);
+                            currentPen.DrawRequest(jsonResult.paths[i]);
                             socket.emit('draw', jsonResult.paths[i]);
                         }
                     }
@@ -324,42 +323,43 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 switch(event.target.value){
                     case 'eraser':
-                        currentPen.ChangeType('path');
-                        drawCursor = "crosshair";
+                        currentPen.ChangeType('eraser');
+                        document.querySelector('#drawSize-container').value = currentPen.size;
                         currentPen.color = "white";
+
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         break;
                     case 'marker':
-                        currentPen.ChangeType('path');
+                        currentPen.ChangeType('marker');
+                        document.querySelector('#drawSize-container').value = currentPen.size;
                         currentPen.color = "black";
+
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
                     case 'text':
                         currentPen.ChangeType('text');
+                        document.querySelector('#drawSize-container').value = currentPen.size;
                         currentPen.color = "black";
+
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
                     case 'drawAdd':
-                        currentPen.size += 1;
+                        currentPen.ChangeSize(currentPen.size += 1);
                         document.querySelector('#drawSize-container').value = currentPen.size;
-                        cursor.SetSize(currentPen.size);
                         break;
                     case 'drawRemove':
-                        currentPen.size -= 1;
-                        if(currentPen.size <= 0){
-                            currentPen.size = 1;
-                        }
+                        currentPen.ChangeSize(currentPen.size -= 1);
                         document.querySelector('#drawSize-container').value = currentPen.size;
-                        cursor.SetSize(currentPen.size);
                         break;
                     default:
                         break;
                 }
+                cursor.SetSize(currentPen.size);
             });
 
             document.querySelector('#colors-container').addEventListener('click', function(event){
@@ -395,11 +395,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
             document.querySelector('#drawSize-container').addEventListener('input', function(event){
                 if(!isNaN(event.target.value) && event.target.value > 0){
-                    currentPen.size = event.target.value;
-                }else{
-                    event.target.value = currentPen.size;
+                    currentPen.ChangeSize(event.target.value);
                 }
                 cursor.SetSize(currentPen.size);
+                event.target.value = currentPen.size;
             });
 
             //Mute, kick and mute all buttons

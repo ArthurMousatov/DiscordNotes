@@ -33,11 +33,11 @@ main{
 /* Pen styles */
 #textArea-input{
     position: absolute;
+    overflow: visible;
     width: 200px;
     height: 100px;
     background-color: transparent;
-    border-color: teal;
-    border-radius: 1px;
+    border: none;
     text-align: left;
 }
 
