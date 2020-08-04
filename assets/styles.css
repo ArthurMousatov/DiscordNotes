@@ -14,6 +14,9 @@ main{
     position: relative;
     overflow: hidden;
 }
+#title-heading{
+    font-family: 'Cabin Sketch', cursive;
+}
 /* Cursor Styles */
 #cursor-container{
     position: absolute;
