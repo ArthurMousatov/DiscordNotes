@@ -114,6 +114,10 @@ app.get('/', function(req, res){
     res.render('index');
 });
 
+app.get('/error', function(req, res){
+    res.render('error');
+})
+
 app.get('/board', function(req, res){
     let roomString = MakeId(15);
     let hostID = MakeId(15);

@@ -5,23 +5,43 @@
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
         <title>Discord Notes</title>
     </head>
-    <body>
-        <%- include('../assets/nav.ejs') %>
+    <body style="background-image: url(../assets/face.png); background-repeat: no-repeat; background-position: left bottom;">
+        <main>
+            <h1 class="display-1 mx-auto my-5 text-center">Welcome to Discord Notes!</h1>
 
-        <main class="mx-auto w-75">
-
-            <form class="mx-auto my-5 w-50 d-flex flex-column" method="POST" action="/board">
-                <div class="form-group">
-                  <label for="roomInput">Already have a room? Input the room code and start drawing!</label>
-                  <input type="text" class="form-control" name="roomCode" id="roomInput" aria-describedby="roomInput" placeholder="Enter room code" required>
+            <div class="mx-auto w-100 my-5 d-flex flex-row justify-content-around align-items-center">
+                
+                <form class="d-flex flex-column" method="GET" action="/board">
+                    <h2>Don't have a room?</h2>
+                    <button type="submit" class="mx-auto btn btn-success">Create one!</button>
+                </form>
+    
+                <form class="d-flex flex-column" method="POST" action="/board">
+                    <div class="form-group">
+                        <h2>Already have a room?</h2>
+                        <input type="text" class="form-control w-75 mx-auto" name="roomCode" id="roomInput" aria-describedby="roomInput" placeholder="Enter room code" required>
+                    </div>
+                    <button type="submit" class="mx-auto btn btn-danger">Enter Room</button>
+                </form>
+    
+                <div class="d-flex flex-column">
+                    <h2>Do You Have Discord?</h2>
+                    <a class="mx-auto btn btn-info" href="https://discord.com/oauth2/authorize?client_id=719881315377479752&scope=bot">Add our whiteboard bot!</a>
                 </div>
-                <button type="submit" class="mx-auto btn btn-primary">Enter Room</button>
-            </form>
+            </div>
 
-            <form class="mx-auto my-5 w-50 d-flex flex-column" method="GET" action="/board">
-                <h3>Don't have a room?</h3>
-                <button type="submit" class="mx-auto btn btn-primary">Create one!</button>
-            </form>
+            <h1 class="heading-5 mx-auto my-5 text-center">Have any suggestions?</h1>
+            <div class="mx-auto w-100 d-flex flex-row justify-content-center align-items-center">
+                <div class="d-flex flex-column mx-5">
+                    <h4>Github Page</h4>
+                    <a href="https://github.com/Venoshulk/DiscordNotes" class="btn btn-secondary mx-auto my-2">View Github Page</a>
+                </div>
+
+                <div class="d-flex flex-column mx-5">
+                    <h4>Developer's discord</h4>
+                    <a href="https://discord.com/channels/@me/202151990111764480/" class="btn btn-primary mx-auto my-2">Talk to the Dev</a>
+                </div>
+            </div>
         </main>
     </body>
 

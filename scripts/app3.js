@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
         //If connected room doesn't exist
         socket.on("badRoom", () => {
-            window.location.href = '/';
+            window.location.href = '/error';
         });
     
         //Failure joining a room
