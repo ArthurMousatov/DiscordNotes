@@ -122,21 +122,27 @@ document.addEventListener('DOMContentLoaded', function(){
             let data;
             let username = joinForm.elements.user.value.replace(/\s/g, "");
 
-            //Join the desired room
-            if($('#hostID').prop("disabled") === true || $("#hostID").value === ""){
-                data = {
-                    room: roomCode,
-                    user: username,
-                    host: undefined
-                };
+            //Check if name contains illegal characters
+            if(/^[a-z0-9]+$/i.test(username)){
+
+                //Join the desired room
+                if($('#hostID').prop("disabled") === true || $("#hostID").value === ""){
+                    data = {
+                        room: roomCode,
+                        user: username,
+                        host: undefined
+                    };
+                }else{
+                    data = {
+                        room: roomCode,
+                        user: username,
+                        host: joinForm.elements.host.value
+                    };
+                }
+                socket.emit("joinRoom", data);
             }else{
-                data = {
-                    room: roomCode,
-                    user: username,
-                    host: joinForm.elements.host.value
-                };
+                errPar.innerHTML = "Username contains illegal characters"
             }
-            socket.emit("joinRoom", data);
         });
 
         //Hide and unhide the users list
