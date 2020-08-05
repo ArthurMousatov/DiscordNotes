@@ -59,23 +59,32 @@ Pen.prototype.ChangeSize = function(newSize){
         default:
             break;
     }
+    document.querySelector('#drawSize-container').value = event.target.value;
 }
 
 Pen.prototype.ChangeType = function(newType){
     this.currentType = newType;
+
     switch(newType){
         case 'eraser':
             this.size = this.eraserSize;
+            this.color = "white";
             break;
         case 'marker':
             this.size = this.markerSize;
+            this.color = "black";
             break;
         case 'text':
             this.size = this.fontSize;
+            this.color = "black"
             break;
         default:
             break;
     }
+
+    document.querySelector('#drawSize-container').value = this.size;
+    document.querySelector('#drawSize-range').value = this.size;
+
     if(this.textArea){
         this.textArea.remove();
     }
@@ -170,8 +179,8 @@ Pen.prototype.Draw =  function(event){
 
 //Client draw optimize
 Pen.prototype.OptimizeDraw =  function(){
-    let toleranceX = 150;
-    let toleranceY = 40;
+    let toleranceX = 80;
+    let toleranceY = 150;
 
     for(let i = 1; i < this.currentPaths.length - 1; i++){
         let xDist = Math.abs(this.currentPaths[i].x - this.currentPaths[i].lastx);
@@ -283,7 +292,7 @@ Pen.prototype.CreateText = function(x, y){
                 this.textArea = null;
             }
         });
-        
+
         document.querySelector('main').appendChild(this.textArea);
     }else{
         this.textArea.style.fontSize = this.size * this.basePenFactor + 'px';

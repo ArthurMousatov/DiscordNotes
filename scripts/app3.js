@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
                 if(!isHost){isMuted = !isMuted}
                 muteAll = !muteAll;
-            })
+            });
     
             canvas.addEventListener('mousedown', function(event){
                 if(event.buttons === 1 && !isMuted){
@@ -352,18 +352,12 @@ document.addEventListener('DOMContentLoaded', function(){
                 switch(event.target.value){
                     case 'eraser':
                         currentPen.ChangeType('eraser');
-                        document.querySelector('#drawSize-container').value = currentPen.size;
-                        document.querySelector('#drawSize-range').value = currentPen.size;
-                        currentPen.color = "white";
 
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         break;
                     case 'marker':
                         currentPen.ChangeType('marker');
-                        document.querySelector('#drawSize-container').value = currentPen.size;
-                        document.querySelector('#drawSize-range').value = currentPen.size;
-                        currentPen.color = "black";
 
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
@@ -371,36 +365,26 @@ document.addEventListener('DOMContentLoaded', function(){
                         break;
                     case 'text':
                         currentPen.ChangeType('text');
-                        document.querySelector('#drawSize-container').value = currentPen.size;
-                        document.querySelector('#drawSize-range').value = currentPen.size;
-                        currentPen.color = "black";
 
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
-                    // case 'drawAdd':
-                    //     currentPen.ChangeSize(currentPen.size += 1);
-                    //     document.querySelector('#drawSize-container').value = currentPen.size;
-                    //     break;
-                    // case 'drawRemove':
-                    //     currentPen.ChangeSize(currentPen.size -= 1);
-                    //     document.querySelector('#drawSize-container').value = currentPen.size;
-                    //     break;
                     default:
                         break;
                 }
+
                 cursor.SetSize(currentPen.size * currentPen.basePenFactor);
             });
 
             document.querySelector('#drawSize-range').addEventListener('change', (event)=>{
                 event.stopPropagation();
                 currentPen.ChangeSize(event.target.value);
-                document.querySelector('#drawSize-container').value = event.target.value;
             });
 
             document.querySelector('#colors-container').addEventListener('click', function(event){
                 event.stopPropagation();
+
                 if(event.target.tagName.toLowerCase() === "button"){
                     currentPen.color = event.target.value;
                     OpenColors();
@@ -413,8 +397,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 switch(event.target.value){
                     case 'zoomOut':
                         currentPen.zoomFactor += 0.1;
-                        if(currentPen.zoomFactor >= 2){
-                            currentPen.zoomFactor = 2;
+                        if(currentPen.zoomFactor >= 5){
+                            currentPen.zoomFactor = 5;
                         }
                         currentPen.ReDraw();
                         break;
@@ -490,9 +474,8 @@ document.addEventListener('DOMContentLoaded', function(){
             importBtn.addEventListener('change', ImportPaths);
             
             cursor.ChangeCursor('marker', currentPen.size * currentPen.basePenFactor);
-            //cursor.ShowCursor();
-
             document.querySelector('#drawSize-container').value = currentPen.size;
+
             document.body.querySelector('main').appendChild(canvas);
             document.body.querySelector('.menus-container').style.display = "block";
             joinForm.parentNode.removeChild(joinForm);
