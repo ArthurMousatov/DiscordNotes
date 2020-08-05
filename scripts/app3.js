@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function(){
             socket.emit('usrMute', data);
         }
 
-        function CreateUser(host, userName){
+        function CreateUser(host, userName, isUserMuted){
             let currentUserCont = usrCont.cloneNode(true);
             currentUserCont.id = userPrefix + userName;
             currentUserCont.classList.add('user-container');
@@ -61,9 +61,12 @@ document.addEventListener('DOMContentLoaded', function(){
                 muteBtn.innerHTML = "Mute";
                 kickBtn.id = 'kick-btn';
                 muteBtn.id = 'mute-btn';
-                if(muteAll){
-                    muteBtn.classList.add("active-btn");
+
+                //If server-wide mute is in effect
+                if(isUserMuted){
+                    muteBtn.classList.add('active-btn');
                 }
+
                 currentUserCont.appendChild(kickBtn);
                 currentUserCont.appendChild(muteBtn);
 
@@ -171,11 +174,15 @@ document.addEventListener('DOMContentLoaded', function(){
             let currentPen = new Pen(3, "rgb(0,0,0)", "round", canvas, socket);
 
             isHost = data.isHost;
-            muteAll = data.muteAll;
+            isMuted = data.isMuted;
 
-            if(muteAll && !isHost){
-                isMuted = true;
+
+            if(isMuted){
+                document.querySelector("#isMuted-heading").style.display = "block";
+            }else{
+                document.querySelector("#isMuted-heading").style.display = "none";
             }
+
             InitUsers(data);
 
             //Drag function
@@ -198,27 +205,29 @@ document.addEventListener('DOMContentLoaded', function(){
             
             //Import paths
             function ImportPaths(){
-                if(!isMuted){
-                    let reader = new FileReader();
-        
-                    reader.addEventListener('error', ()=>{
-                        console.log(`Error occured during reading`);
-                        reader.abort();
-                    });
-        
-                    reader.onloadend = function(){
-                        let jsonResult = JSON.parse(reader.result);
-                        for(let i = 0;i < jsonResult.paths.length; i++){
-                            currentPen.DrawRequest(jsonResult.paths[i]);
-                            socket.emit('draw', jsonResult.paths[i]);
+                if(isHost || !muteAll){
+                    if(!isMuted){
+                        let reader = new FileReader();
+            
+                        reader.addEventListener('error', ()=>{
+                            console.log(`Error occured during reading`);
+                            reader.abort();
+                        });
+            
+                        reader.onloadend = function(){
+                            let jsonResult = JSON.parse(reader.result);
+                            for(let i = 0;i < jsonResult.paths.length; i++){
+                                currentPen.DrawRequest(jsonResult.paths[i]);
+                                socket.emit('draw', jsonResult.paths[i]);
+                            }
                         }
-                    }
-        
-                    if(importBtn.files > 1 || importBtn.files <= 0){
-                        console.log("Error importing");
-                    }else{
-                        let obj = importBtn.files[0];
-                        reader.readAsText(obj);
+            
+                        if(importBtn.files > 1 || importBtn.files <= 0){
+                            console.log("Error importing");
+                        }else{
+                            let obj = importBtn.files[0];
+                            reader.readAsText(obj);
+                        }
                     }
                 }
             }
@@ -240,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function(){
             });
 
             socket.on("usrJoin", (data) =>{
-                CreateUser(data.isHost, data.user);
+                CreateUser(data.isHost, data.user, data.isMuted);
             });
 
             socket.on("usrLeft", (data) =>{
@@ -273,9 +282,14 @@ document.addEventListener('DOMContentLoaded', function(){
 
             socket.on("mute", () =>{
                 isMuted = !isMuted;
+                if(isMuted){
+                    document.querySelector("#isMuted-heading").style.display = "block";
+                }else{
+                    document.querySelector("#isMuted-heading").style.display = "none";
+                }
             });
 
-            socket.on("usrMuteAll", ()=>{
+            socket.on("usrMuteAll", (isMuteAll)=>{
                 if(isHost){
                     let muteAllBtn = document.querySelector('#muteAll-btn');
                     if(muteAllBtn.classList.contains('active-btn')){
@@ -283,9 +297,30 @@ document.addEventListener('DOMContentLoaded', function(){
                     }else{
                         muteAllBtn.classList.add('active-btn');
                     }
+                }else{
+                    isMuted = isMuteAll;
                 }
-                if(!isHost){isMuted = !isMuted}
-                muteAll = !muteAll;
+
+                if(isMuted){
+                    document.querySelector("#isMuted-heading").style.display = "block";
+                }else{
+                    document.querySelector("#isMuted-heading").style.display = "none";
+                }
+
+                let usersConts = document.querySelectorAll('.user-container');
+                if(isMuteAll){
+                    for(let i = 1; i < usersConts.length; i++){
+                        if(usersConts[i].querySelector('#mute-btn')){
+                            usersConts[i].querySelector('#mute-btn').classList.add('active-btn');
+                        }
+                    }
+                }else{
+                    for(let i = 1; i < usersConts.length; i++){
+                        if(usersConts[i].querySelector('#mute-btn')){
+                            usersConts[i].querySelector('#mute-btn').classList.remove('active-btn');
+                        }
+                    }
+                }
             });
     
             canvas.addEventListener('mousedown', function(event){
@@ -428,33 +463,28 @@ document.addEventListener('DOMContentLoaded', function(){
                         break;
                     case 'muteAll-btn':
                         socket.emit('usrMuteAll');
-                        muteAll = !muteAll;
+
+                        let usersConts = document.querySelectorAll('.user-container');
+                        if(!event.target.classList.contains('active-btn')){
+                            for(let i = 1; i < usersConts.length; i++){
+                                if(usersConts[i].querySelector('#mute-btn')){
+                                    usersConts[i].querySelector('#mute-btn').classList.add('active-btn');
+                                }
+                            }
+                        }else{
+                            for(let i = 1; i < usersConts.length; i++){
+                                if(usersConts[i].querySelector('#mute-btn')){
+                                    usersConts[i].querySelector('#mute-btn').classList.remove('active-btn');
+                                }
+                            }
+                        }
+
                         if(event.target.classList.contains('active-btn')){
                             event.target.classList.remove('active-btn');
                         }else{
                             event.target.classList.add('active-btn');
                         }
 
-                        // let usersConts = document.querySelectorAll('.user-container');
-
-                        // //If everyone is already muted
-                        // if(muteAll){
-                        //     for(let i=1; i < usersConts.length; i++){
-                        //         //If user muted
-                        //         if(usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
-                        //             Mute(usersConts[i].id);
-                        //         }
-                        //     }
-                        // }else{
-                        //     for(let i=1; i < usersConts.length; i++){
-                        //         //If user not muted
-                        //         if(!usersConts[i].querySelector('#mute-btn').classList.contains('active-btn')){
-                        //             Mute(usersConts[i].id);
-                        //         }
-                        //     }
-                        // }
-    
-                        // muteAll = !muteAll;
                         break;
                     case 'export-btn':
                         let downloadedPaths = {

@@ -206,7 +206,6 @@ io.on("connection", (socket) =>{
             let currentRoomIndex = RoomSearch(data.room, drawRooms);
             if(currentRoomIndex != null){
                 socket.room = data.room;
-                socket.isMuted = false;
                 let user = sanitizer.value(data.user, 'str');
 
                 //Check if name is not unique
@@ -223,6 +222,7 @@ io.on("connection", (socket) =>{
                     }
                     socket.username = name;
                 }
+
                 socket.index = currentRoomIndex;
                 
                 //Get the room's current users
@@ -239,13 +239,17 @@ io.on("connection", (socket) =>{
                     socket.isHost = false;
                 }
 
+                socket.isMuted = drawRooms[currentRoomIndex]['muteAll'] && !socket.isHost;
+
                 socket.join(data.room);
                 drawRooms[currentRoomIndex]['users'].push(socket);
 
                 //Send the new user info to other sockets
+                console.log(drawRooms[currentRoomIndex]['muteAll'] && !socket.isHost);
                 let sendData = {
                     user: socket.username,
                     isHost: socket.isHost,
+                    isMuted: drawRooms[currentRoomIndex]['muteAll'] && !socket.isHost
                 };
 
                 socket.to(socket.room).emit("usrJoin", sendData);
@@ -255,7 +259,7 @@ io.on("connection", (socket) =>{
                     canvas: drawRooms[socket.index]['canvas'],
                     users: users,
                     isHost: socket.isHost,
-                    muteAll: drawRooms[currentRoomIndex]['muteAll']
+                    isMuted: drawRooms[currentRoomIndex]['muteAll'] && !socket.isHost
                 };
 
                 return socket.emit("suc", sendData);
@@ -277,38 +281,34 @@ io.on("connection", (socket) =>{
         */
 
         socket.on("draw", (data) =>{
-            if(socket.isHost || !drawRooms[socket.index]['muteAll']){
-                if(!socket.isMuted){ 
-                    socket.to(socket.room).emit("draw", data);
-                    
-                    //Reset timeOut
-                    let timeOutInfo = {
-                        room: drawRooms[socket.index]['room']
-                    };
-                    clearInterval(drawRooms[socket.index]['timeOut']);
-                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
-    
-                    //save the pixel data into canvas array
-                    drawRooms[socket.index]['canvas'].push(data);
-                }
+            if(!socket.isMuted){ 
+                socket.to(socket.room).emit("draw", data);
+                
+                //Reset timeOut
+                let timeOutInfo = {
+                    room: drawRooms[socket.index]['room']
+                };
+                clearInterval(drawRooms[socket.index]['timeOut']);
+                drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                //save the pixel data into canvas array
+                drawRooms[socket.index]['canvas'].push(data);
             }
         });
 
         socket.on("erase", (data) =>{
-            if(socket.isHost || !drawRooms[socket.index]['muteAll']){
-                if(!socket.isMuted){
-                    socket.to(socket.room).emit('erase', data);
-    
-                    //Reset timeOut
-                    let timeOutInfo = {
-                        room: drawRooms[socket.index]['room']
-                    };
-                    clearInterval(drawRooms[socket.index]['timeOut']);
-                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
-    
-                    //save the pixel data into canvas array
-                    drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
-                }
+            if(!socket.isMuted){
+                socket.to(socket.room).emit('erase', data);
+
+                //Reset timeOut
+                let timeOutInfo = {
+                    room: drawRooms[socket.index]['room']
+                };
+                clearInterval(drawRooms[socket.index]['timeOut']);
+                drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                //save the pixel data into canvas array
+                drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
             }
         });
 
@@ -351,7 +351,10 @@ io.on("connection", (socket) =>{
 
         socket.on("usrMuteAll", () =>{
             drawRooms[socket.index]['muteAll'] = !drawRooms[socket.index]['muteAll'];
-            socket.to(socket.room).emit("usrMuteAll");
+            for(let i = 0; i < drawRooms[socket.index]['users'].length; i++){
+                drawRooms[socket.index]['users'][i].isMuted = drawRooms[socket.index]['muteAll'] && !drawRooms[socket.index]['users'][i].isHost;
+            }
+            socket.to(socket.room).emit("usrMuteAll", drawRooms[socket.index]['muteAll']);
         })
 
         //On user disconnection
