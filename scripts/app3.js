@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function(){
             canvas.height = document.body.clientHeight - document.querySelector('#cursor-helper').offsetTop;
 
             let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
-            let currentPen = new Pen(15, "rgb(0,0,0)", "round", canvas, socket);
+            let currentPen = new Pen(3, "rgb(0,0,0)", "round", canvas, socket);
 
             isHost = data.isHost;
             muteAll = data.muteAll;
@@ -353,6 +353,7 @@ document.addEventListener('DOMContentLoaded', function(){
                     case 'eraser':
                         currentPen.ChangeType('eraser');
                         document.querySelector('#drawSize-container').value = currentPen.size;
+                        document.querySelector('#drawSize-range').value = currentPen.size;
                         currentPen.color = "white";
 
                         currentTool.classList.remove("active-btn");
@@ -361,6 +362,7 @@ document.addEventListener('DOMContentLoaded', function(){
                     case 'marker':
                         currentPen.ChangeType('marker');
                         document.querySelector('#drawSize-container').value = currentPen.size;
+                        document.querySelector('#drawSize-range').value = currentPen.size;
                         currentPen.color = "black";
 
                         currentTool.classList.remove("active-btn");
@@ -370,24 +372,31 @@ document.addEventListener('DOMContentLoaded', function(){
                     case 'text':
                         currentPen.ChangeType('text');
                         document.querySelector('#drawSize-container').value = currentPen.size;
+                        document.querySelector('#drawSize-range').value = currentPen.size;
                         currentPen.color = "black";
 
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
                         OpenColors();
                         break;
-                    case 'drawAdd':
-                        currentPen.ChangeSize(currentPen.size += 1);
-                        document.querySelector('#drawSize-container').value = currentPen.size;
-                        break;
-                    case 'drawRemove':
-                        currentPen.ChangeSize(currentPen.size -= 1);
-                        document.querySelector('#drawSize-container').value = currentPen.size;
-                        break;
+                    // case 'drawAdd':
+                    //     currentPen.ChangeSize(currentPen.size += 1);
+                    //     document.querySelector('#drawSize-container').value = currentPen.size;
+                    //     break;
+                    // case 'drawRemove':
+                    //     currentPen.ChangeSize(currentPen.size -= 1);
+                    //     document.querySelector('#drawSize-container').value = currentPen.size;
+                    //     break;
                     default:
                         break;
                 }
-                cursor.SetSize(currentPen.size);
+                cursor.SetSize(currentPen.size * currentPen.basePenFactor);
+            });
+
+            document.querySelector('#drawSize-range').addEventListener('change', (event)=>{
+                event.stopPropagation();
+                currentPen.ChangeSize(event.target.value);
+                document.querySelector('#drawSize-container').value = event.target.value;
             });
 
             document.querySelector('#colors-container').addEventListener('click', function(event){
@@ -419,14 +428,6 @@ document.addEventListener('DOMContentLoaded', function(){
                     default:
                         break;
                 }
-            });
-
-            document.querySelector('#drawSize-container').addEventListener('input', function(event){
-                if(!isNaN(event.target.value) && event.target.value > 0){
-                    currentPen.ChangeSize(event.target.value);
-                }
-                cursor.SetSize(currentPen.size);
-                event.target.value = currentPen.size;
             });
 
             //Mute, kick and mute all buttons
@@ -488,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             importBtn.addEventListener('change', ImportPaths);
             
-            cursor.ChangeCursor('marker', currentPen.size);
+            cursor.ChangeCursor('marker', currentPen.size * currentPen.basePenFactor);
             //cursor.ShowCursor();
 
             document.querySelector('#drawSize-container').value = currentPen.size;

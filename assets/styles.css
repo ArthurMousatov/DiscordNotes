@@ -65,6 +65,18 @@ main{
     margin: 10px;
     border-radius: 10px;
 }
+#drawSize-container{
+    width: 75px;
+    height: 50px;
+    margin: 10px;
+    border-radius: 10px;
+}
+#drawSize-range{
+    width: 200px;
+    height: 50px;
+    margin: 10px;
+    border-radius: 10px;
+}
 #zoom-container{
     position: fixed;
     bottom: 0;
@@ -113,7 +125,7 @@ main{
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
-    align-items: baseline;
+    align-items: center;
 }
 #drawSize-container{
     width: 40px;
