@@ -6,6 +6,7 @@
 }
 body{
     min-height: 100;
+    overflow: hidden;
 }
 html{
     height: 100%;
@@ -60,14 +61,14 @@ main{
     align-items: center;
 }
 #tools-container button{
-    width: 75px;
-    height: 50px;
+    width: 50px;
+    height: 40px;
     margin: 10px;
     border-radius: 10px;
 }
 #drawSize-container{
-    width: 75px;
-    height: 50px;
+    width: 40px;
+    height: 30px;
     margin: 10px;
     border-radius: 10px;
 }
@@ -127,6 +128,12 @@ main{
     justify-content: center;
     align-items: center;
 }
+#userActions-container button img{
+    pointer-events: none;
+    max-width: 100%; 
+    max-height: 100%; 
+    margin: 0 auto;
+}
 #drawSize-container{
     width: 40px;
     height: 30px;
@@ -137,6 +144,15 @@ main{
     right: 0;
     top: 50%;
     transform: translateY(-50%);
+}
+#info-container button{
+    border-radius: 10px;
+}
+#info-container button img{
+    pointer-events: none;
+    max-width: 100%; 
+    max-height: 100%; 
+    margin: 0 auto;
 }
 #hostCode{
     display: none;

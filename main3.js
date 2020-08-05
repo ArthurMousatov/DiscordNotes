@@ -245,7 +245,6 @@ io.on("connection", (socket) =>{
                 drawRooms[currentRoomIndex]['users'].push(socket);
 
                 //Send the new user info to other sockets
-                console.log(drawRooms[currentRoomIndex]['muteAll'] && !socket.isHost);
                 let sendData = {
                     user: socket.username,
                     isHost: socket.isHost,
