@@ -92,11 +92,20 @@ function TimeOut(){
     let currentRoomIndex = RoomSearch(this.room, drawRooms);
     if(currentRoomIndex !== null){
         console.log("Room has hit timeOut, proceeding to delete");
+
         for(let i = 0; i < drawRooms[currentRoomIndex]['users'].length; i++){
             drawRooms[currentRoomIndex]['users'][i].emit('timeOut');
         }
+        
         clearInterval(drawRooms[currentRoomIndex]['timeOut']);
         drawRooms.splice(currentRoomIndex, 1);
+
+        //Reset the sockets' indexes
+        for(let i = currentRoomIndex; i < drawRooms.length; i++){
+            drawRooms[i]['users'].forEach(userSocket => {
+                userSocket.index = userSocket.index - 1;
+            });
+        }
     }
 }
 
