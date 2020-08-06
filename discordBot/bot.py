@@ -16,7 +16,7 @@ async def on_ready():
 
 @bot.command()
 async def board(ctx, *args):
-    reqUrl = "%s/api/create/%s" % (baseUrl, discordTokens.boardID)
+    reqUrl = "%s/api/create/%s/%s" % (baseUrl, discordTokens.boardID, "true")
     try:
         r = requests.get(url = reqUrl)
         data = r.json()

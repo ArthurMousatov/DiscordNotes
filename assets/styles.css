@@ -158,7 +158,7 @@ main{
     display: none;
 }
 .active-btn{
-    border: solid 5px black;
+    border: solid 3px black;
 }
 #error-paragraph{
     color: red;

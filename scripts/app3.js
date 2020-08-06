@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', function(){
                 let muteAllBtn = document.createElement('button');
                 muteAllBtn.innerHTML = "Mute All";
                 muteAllBtn.id = "muteAll-btn";
+                if(data.muteAll){
+                    muteAllBtn.classList.add('active-btn');
+                }
                 optCont.appendChild(muteAllBtn);
             }
         }
@@ -205,20 +208,6 @@ document.addEventListener('DOMContentLoaded', function(){
             }
 
             function SnapShot(){
-                // let ctx = canvas.getContext("2d");
-                // let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                // for(let i = 0; i < imgData.length; i+4){
-                //     if(imgData[i] === 255 && imgData[i + 1] === 255 && imgData[i + 2] === 255 && imgData[i + 3] === 255){
-                //         imgData[i] = 252;
-                //         imgData[i + 1] = 252;
-                //         imgData[i + 2] = 252;
-                //         imgData[i + 3] = 252;
-                //     }
-                // }
-                // let imgCanvas = document.createElement('canvas');
-                // imgCanvas.height = canvas.height;
-                // imgCanvas.width = canvas.width;
-                // imgCanvas.putImageData(imgData, 0, 0);
                 let ctx = canvas.getContext("2d");
 
                 let compositeOperation = ctx.globalCompositeOperation;

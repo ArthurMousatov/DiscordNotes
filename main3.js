@@ -157,7 +157,7 @@ app.get('/board/:id', function(req, res){
 let botId = "12354335asdfdserw32";
 
 //Allows the creation of a board if the id is approved
-app.get('/api/create/:id', function(req, res){
+app.get('/api/create/:id/:muteAll', function(req, res){
     if(req.params.id === botId){
         let roomString;
         let hostID = MakeId(15);
@@ -165,6 +165,10 @@ app.get('/api/create/:id', function(req, res){
             room: roomString
         };
         let timeOutID = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+        let muteAll = false;
+        if(req.params.muteAll === "true"){
+            muteAll = true;
+        }
 
         //Search for a non-used room string
         do{
@@ -178,7 +182,7 @@ app.get('/api/create/:id', function(req, res){
             users: [],
             canvas: [],
             timeOut: timeOutID,
-            muteAll: false
+            muteAll: muteAll
         };
         drawRooms.push(roomObj);
         console.log("Created room " + roomString);
@@ -258,6 +262,7 @@ io.on("connection", (socket) =>{
                     canvas: drawRooms[socket.index]['canvas'],
                     users: users,
                     isHost: socket.isHost,
+                    muteAll: drawRooms[currentRoomIndex]['muteAll'],
                     isMuted: drawRooms[currentRoomIndex]['muteAll'] && !socket.isHost
                 };
 
