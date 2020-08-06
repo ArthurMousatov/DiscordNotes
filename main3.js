@@ -288,15 +288,32 @@ io.on("connection", (socket) =>{
             if(!socket.isMuted){ 
                 socket.to(socket.room).emit("draw", data);
                 
-                //Reset timeOut
-                let timeOutInfo = {
-                    room: drawRooms[socket.index]['room']
-                };
-                clearInterval(drawRooms[socket.index]['timeOut']);
-                drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+                if(drawRooms[socket.index] && drawRooms[socket.index]['room'] === socket.room){
 
-                //save the pixel data into canvas array
-                drawRooms[socket.index]['canvas'].push(data);
+                    //Reset timeOut
+                    let timeOutInfo = {
+                        room: drawRooms[socket.index]['room']
+                    };
+                    clearInterval(drawRooms[socket.index]['timeOut']);
+                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                    //save the pixel data into canvas array
+                    drawRooms[socket.index]['canvas'].push(data);
+                }else{
+                    let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+                    if(currentRoomIndex != null){
+
+                        //Reset timeOut
+                        let timeOutInfo = {
+                            room: drawRooms[currentRoomIndex]['room']
+                        };
+                        clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+                        drawRooms[currentRoomIndex]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                        //save the pixel data into canvas array
+                        drawRooms[currentRoomIndex]['canvas'].push(data);
+                    }
+                }
             }
         });
 
@@ -304,15 +321,35 @@ io.on("connection", (socket) =>{
             if(!socket.isMuted){
                 socket.to(socket.room).emit('erase', data);
 
-                //Reset timeOut
-                let timeOutInfo = {
-                    room: drawRooms[socket.index]['room']
-                };
-                clearInterval(drawRooms[socket.index]['timeOut']);
-                drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+                //Failsafe check
+                if(drawRooms[socket.index] && drawRooms[socket.index]['room'] === socket.room){
 
-                //save the pixel data into canvas array
-                drawRooms[socket.index]['canvas'].push({x: data.x, y: data.y, lastx: data.lastx, lasty: data.lasty, size: data.size, color: data.color});
+                    //Reset timeOut
+                    let timeOutInfo = {
+                        room: drawRooms[socket.index]['room']
+                    };
+                    clearInterval(drawRooms[socket.index]['timeOut']);
+                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                    //save the pixel data into canvas array
+                    drawRooms[socket.index]['canvas'].push(data);
+                }else{
+
+                    let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+                    if(currentRoomIndex != null){
+
+                        //Reset timeOut
+                        let timeOutInfo = {
+                            room: drawRooms[currentRoomIndex]['room']
+                        };
+                        clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+                        drawRooms[currentRoomIndex]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                        //save the pixel data into canvas array
+                        drawRooms[currentRoomIndex]['canvas'].push(data);
+                    }
+                }
+            
             }
         });
 
@@ -325,14 +362,6 @@ io.on("connection", (socket) =>{
                 if(kickedSocket !== null){
                     kickedSocket.emit('kicked');
                     kickedSocket.leave(socket.room);
-
-                    // let data = {
-                    //     user: kickedSocket.username
-                    // };
-                    // kickedSocket.to(kickedSocket.room).emit("usrLeft", data);
-
-                    // let kickedSocketIndex = drawRooms[kickedSocket.index]['users'].indexOf(kickedSocket);
-                    // drawRooms[kickedSocket.index]['users'].splice(kickedSocketIndex, 1);
                 }
             }
         });
@@ -354,11 +383,14 @@ io.on("connection", (socket) =>{
         });
 
         socket.on("usrMuteAll", () =>{
-            drawRooms[socket.index]['muteAll'] = !drawRooms[socket.index]['muteAll'];
-            for(let i = 0; i < drawRooms[socket.index]['users'].length; i++){
-                drawRooms[socket.index]['users'][i].isMuted = drawRooms[socket.index]['muteAll'] && !drawRooms[socket.index]['users'][i].isHost;
+            let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+
+            drawRooms[currentRoomIndex]['muteAll'] = !drawRooms[currentRoomIndex]['muteAll'];
+
+            for(let i = 0; i < drawRooms[currentRoomIndex]['users'].length; i++){
+                drawRooms[currentRoomIndex]['users'][i].isMuted = drawRooms[currentRoomIndex]['muteAll'] && !drawRooms[currentRoomIndex]['users'][i].isHost;
             }
-            socket.to(socket.room).emit("usrMuteAll", drawRooms[socket.index]['muteAll']);
+            socket.to(socket.room).emit("usrMuteAll", drawRooms[currentRoomIndex]['muteAll']);
         })
 
         //On user disconnection
@@ -376,7 +408,15 @@ io.on("connection", (socket) =>{
                 if(drawRooms[currentRoomIndex]['users'].length === 0){
                     console.log("Room has no users, proceeding to delete");
                     clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+
                     drawRooms.splice(currentRoomIndex, 1);
+
+                    //Reset the sockets' indexes
+                    for(let i = currentRoomIndex; i < drawRooms.length; i++){
+                        drawRooms[i]['users'].forEach(userSocket => {
+                            userSocket.index = userSocket.index - 1;
+                        });
+                    }
                 }else{
                     let data = {
                         user: socket.username
