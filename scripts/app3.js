@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', function(){
         //On successfully joining a room
         socket.on("suc", (data) => {
             const canvas = document.createElement('canvas');
+            canvas.style.backgroundColor = "white";
             canvas.height = document.body.clientHeight - document.querySelector('#cursor-helper').offsetTop;
 
             let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
@@ -194,10 +195,44 @@ document.addEventListener('DOMContentLoaded', function(){
 
             //Export paths in json format
             function DownloadPaths(exportObj, exportName){
-                var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-                var downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href",     dataStr);
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+                let downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
                 downloadAnchorNode.setAttribute("download", exportName + ".json");
+                document.body.appendChild(downloadAnchorNode); // required for firefox
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+
+            function SnapShot(){
+                // let ctx = canvas.getContext("2d");
+                // let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                // for(let i = 0; i < imgData.length; i+4){
+                //     if(imgData[i] === 255 && imgData[i + 1] === 255 && imgData[i + 2] === 255 && imgData[i + 3] === 255){
+                //         imgData[i] = 252;
+                //         imgData[i + 1] = 252;
+                //         imgData[i + 2] = 252;
+                //         imgData[i + 3] = 252;
+                //     }
+                // }
+                // let imgCanvas = document.createElement('canvas');
+                // imgCanvas.height = canvas.height;
+                // imgCanvas.width = canvas.width;
+                // imgCanvas.putImageData(imgData, 0, 0);
+                let ctx = canvas.getContext("2d");
+
+                let compositeOperation = ctx.globalCompositeOperation;
+                ctx.globalCompositeOperation = "destination-over";
+                ctx.fillStyle = "white";
+                ctx.fillRect(0,0,canvas.width,canvas.height);
+
+                let img = canvas.toDataURL("image/png");
+                ctx.globalCompositeOperation = compositeOperation;
+                currentPen.ReDraw();
+
+                let downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", img);
+                downloadAnchorNode.setAttribute("download", "snap.png");
                 document.body.appendChild(downloadAnchorNode); // required for firefox
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
@@ -386,6 +421,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 switch(event.target.value){
                     case 'eraser':
+                        if(document.querySelector('#colors-container').style.display === 'flex'){
+                            OpenColors();
+                        }
                         currentPen.ChangeType('eraser');
 
                         currentTool.classList.remove("active-btn");
@@ -502,6 +540,7 @@ document.addEventListener('DOMContentLoaded', function(){
             });
 
             importBtn.addEventListener('change', ImportPaths);
+            document.querySelector('#snap-btn').addEventListener('click', SnapShot)
             
             cursor.ChangeCursor('marker', currentPen.size * currentPen.basePenFactor);
             document.querySelector('#drawSize-container').value = currentPen.size;

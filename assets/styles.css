@@ -190,13 +190,19 @@ main{
 .options-container{
     margin-bottom: 10px;
     border: dotted 2px black;
+
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
     align-items: center;
 }
+.options-container button{
+    width: 75px;
+    height: 50px;
+    border-radius: 10px;
+}
 .options-container *{
-    margin: 10px;
+    margin: 5px;
 }
 #import-input{
     display: none;

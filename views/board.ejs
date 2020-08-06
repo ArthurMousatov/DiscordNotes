@@ -37,8 +37,9 @@
                         <h1 id="isMuted-heading" class="heading-5 text-center">MUTED</h1>
                         <li class="options-container">
                             <input id="import-input" type="file" accept=".json"></input>
-                            <button id="import-btn">Import</button>
-                            <button id="export-btn" type="file" accept=".json">Export</button>
+                            <button id="import-btn" title="Import a json file!">Import</button>
+                            <button id="export-btn" type="file" accept=".json" title="Trying to save your work? Use this button!">Export</button>
+                            <button id="snap-btn" title="Export the current canvas as png!">Snap</button>
                         </li>
                         <li class="user-container" id="user-clone-container">
                             <p id="userName">UserName + if he's host</p>
@@ -59,13 +60,13 @@
                         <input id="drawSize-container"></input>
                         <!-- <button id="drawLess" value="drawRemove">-</button> -->
 
-                        <button id="eraser" value="eraser">
+                        <button id="eraser" value="eraser" title="Wow, an eraser!">
                             <img src="../assets/eraser.svg">
                         </button>
-                        <button id="marker" class="active-btn" value="marker">
+                        <button id="marker" class="active-btn" value="marker" title="The ole classic!">
                             <img src="../assets/brush.svg">
                         </button>
-                        <button id="text" value="text">
+                        <button id="text" value="text" title="Click anywhere, start typing, and then press enter to submit!">
                             <img src="../assets/text.svg">
                         </button>
                     </div>
