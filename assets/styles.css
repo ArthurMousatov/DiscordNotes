@@ -94,6 +94,28 @@ main{
     margin: 10px;
     border-radius: 15%;
 }
+#delete-container{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: baseline;
+}
+#delete-container button{
+    width: 30px;
+    height: 30px;
+    margin: 10px;
+    border-radius: 15%;
+}
+#additions-container{
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+}
 #colors-container{
     display: none;
     flex-flow: row nowrap;
@@ -104,6 +126,12 @@ main{
     width: 20px;
     height: 20px;
     border-radius: 20px;
+}
+#size-container{
+    display: none;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
 }
 #redMarker{
     background-color: red;
@@ -139,7 +167,7 @@ main{
     height: 30px;
 }
 #info-container{
-    max-width: 300px;
+    max-width: 400px;
     position: fixed;
     right: 0;
     top: 50%;
@@ -225,4 +253,18 @@ main{
 .options-container button{
     width: 60px;
     height: 50px;
+}
+#selectedDiv{
+    position: absolute;
+    z-index: 10;
+    border-color: greenyellow;
+    border-style: dashed;
+    border-width: 5px;
+}
+#rectDiv{
+    position: absolute;
+    z-index: 10;
+    border-style: dashed;
+    border-width: 5px;
+    pointer-events: none;
 }

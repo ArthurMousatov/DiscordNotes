@@ -85,21 +85,16 @@ document.addEventListener('DOMContentLoaded', function(){
             }
             if(isHost){
                 let muteAllBtn = document.createElement('button');
+                let deleteAllBtn = document.createElement('button');
+                deleteAllBtn.innerHTML = "Reset Canvas";
+                deleteAllBtn.id = "deleteAll-btn";
                 muteAllBtn.innerHTML = "Mute All";
                 muteAllBtn.id = "muteAll-btn";
                 if(data.muteAll){
                     muteAllBtn.classList.add('active-btn');
                 }
                 optCont.appendChild(muteAllBtn);
-            }
-        }
-
-        function OpenColors(){
-            let drwContainer = document.querySelector('#colors-container');
-            if(drwContainer.style.display !== "flex"){
-                drwContainer.style.display = "flex";
-            }else{
-                drwContainer.style.display = "none";
+                optCont.appendChild(deleteAllBtn);
             }
         }
 
@@ -175,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function(){
             canvas.height = document.body.clientHeight - document.querySelector('#cursor-helper').offsetTop;
 
             let cursor = new Cursor(document.querySelector('#cursor-container'), document.querySelector('#cursor-helper').offsetTop);
-            let currentPen = new Pen(3, "rgb(0,0,0)", "round", canvas, socket);
+            let currentPen = new Pen(3, "rgb(0,0,0)", "round", canvas, socket, cursor);
 
             isHost = data.isHost;
             isMuted = data.isMuted;
@@ -194,17 +189,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 canvas.height = window.innerHeight - document.querySelector('#cursor-helper').offsetTop;
                 canvas.width = document.body.clientWidth;
                 currentPen.ReDraw();
-            }
-
-            //Export paths in json format
-            function DownloadPaths(exportObj, exportName){
-                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-                let downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", exportName + ".json");
-                document.body.appendChild(downloadAnchorNode); // required for firefox
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
             }
 
             function SnapShot(){
@@ -226,35 +210,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
             }
-            
-            //Import paths
-            function ImportPaths(){
-                if(isHost || !muteAll){
-                    if(!isMuted){
-                        let reader = new FileReader();
-            
-                        reader.addEventListener('error', ()=>{
-                            console.log(`Error occured during reading`);
-                            reader.abort();
-                        });
-            
-                        reader.onloadend = function(){
-                            let jsonResult = JSON.parse(reader.result);
-                            for(let i = 0;i < jsonResult.paths.length; i++){
-                                currentPen.DrawRequest(jsonResult.paths[i]);
-                                socket.emit('draw', jsonResult.paths[i]);
-                            }
-                        }
-            
-                        if(importBtn.files > 1 || importBtn.files <= 0){
-                            console.log("Error importing");
-                        }else{
-                            let obj = importBtn.files[0];
-                            reader.readAsText(obj);
-                        }
-                    }
-                }
-            }
     
             //Draw the existing canvas
             if(data.canvas.length != 0){
@@ -270,6 +225,24 @@ document.addEventListener('DOMContentLoaded', function(){
 
             socket.on('erase', (data) =>{
                 currentPen.DrawRequest(data);
+            });
+
+            socket.on('deleteAll', () =>{
+                currentPen.DeleteCanvas();
+            });
+
+            socket.on("deleteElement", (data) =>{
+                currentPen.DeleteElement(data);
+            });
+
+            socket.on("moveElement", (data) =>{
+                for(let i = 0; i < currentPen.drawingArray.length; i++){
+                    if(currentPen.drawingArray[i].userId === data.userId && currentPen.drawingArray[i].eventId === data.eventId){
+                        currentPen.drawingArray[i].drawEvent = data.movedElement;
+                        currentPen.ReDraw();
+                        break;
+                    }
+                }
             });
 
             socket.on("usrJoin", (data) =>{
@@ -346,6 +319,8 @@ document.addEventListener('DOMContentLoaded', function(){
                     }
                 }
             });
+
+            //Main canvas events
     
             canvas.addEventListener('mousedown', function(event){
                 if(event.buttons === 1 && !isMuted){
@@ -355,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 }else if(event.buttons === 2){
                     //Set the last world coord
                     const rect = canvas.getBoundingClientRect();
-                    cursor.HideCursor();
+                    currentPen.cursor.HideCursor();
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
             });
@@ -370,36 +345,39 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(event.buttons === 1 && !isMuted){
                     currentPen.Draw(event);
                 }else if(event.buttons === 2){
+                    if(document.querySelector('#selectedDiv')){
+                        document.querySelector('#selectedDiv').remove();
+                    }
                     const rect = canvas.getBoundingClientRect();
                     currentPen.worldOrigin.x = currentPen.worldOrigin.x + (event.clientX - rect.left - lastWorldCoord.x);
                     currentPen.worldOrigin.y = currentPen.worldOrigin.y + (event.clientY - rect.top - lastWorldCoord.y);
 
                     currentPen.ReDraw();
-                    lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
+                    lastWorldCoord = {x: (event.clientX - rect.left), y: (event.clientY - rect.top)};
                 }
 
-                cursor.SetCoordinates(event.pageX, event.pageY);
+                currentPen.cursor.SetCoordinates(event.pageX, event.pageY);
             });
     
             canvas.addEventListener('mouseup', function(event){
                 if(event.button === 0 && !isMuted){
                     currentPen.OptimizeDraw();
                 }else if(event.button === 2){
-                    cursor.ShowCursor();
+                    currentPen.cursor.ShowCursor();
                 }
             });
 
             canvas.addEventListener('mouseout', function(){
-                cursor.HideCursor();
+                currentPen.cursor.HideCursor();
             });
 
             canvas.addEventListener('mouseenter', function(){
-                cursor.ShowCursor();
+                currentPen.cursor.ShowCursor();
             })
     
             window.addEventListener('resize', function(){
                 ResizeCanvas();
-                cursor.offsetY = document.querySelector('#cursor-helper').offsetTop;
+                currentPen.cursor.offsetY = document.querySelector('#cursor-helper').offsetTop;
             });
             
             //Drawing tools
@@ -410,9 +388,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 switch(event.target.value){
                     case 'eraser':
-                        if(document.querySelector('#colors-container').style.display === 'flex'){
-                            OpenColors();
-                        }
                         currentPen.ChangeType('eraser');
 
                         currentTool.classList.remove("active-btn");
@@ -423,20 +398,28 @@ document.addEventListener('DOMContentLoaded', function(){
 
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
-                        OpenColors();
                         break;
                     case 'text':
                         currentPen.ChangeType('text');
 
                         currentTool.classList.remove("active-btn");
                         event.target.classList.add("active-btn");
-                        OpenColors();
+                        break;
+                    case 'smart':
+                        currentPen.ChangeType('smart');
+
+                        currentTool.classList.remove("active-btn");
+                        event.target.classList.add("active-btn");
+                        break;
+                    case 'rect':
+                        currentPen.ChangeType('rect');
+
+                        currentTool.classList.remove("active-btn");
+                        event.target.classList.add("active-btn");
                         break;
                     default:
                         break;
                 }
-
-                cursor.SetSize(currentPen.size * currentPen.basePenFactor);
             });
 
             document.querySelector('#drawSize-range').addEventListener('change', (event)=>{
@@ -449,12 +432,16 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 if(event.target.tagName.toLowerCase() === "button"){
                     currentPen.color = event.target.value;
-                    OpenColors();
+                    currentPen.CloseSizeColors();
                 }
             });
 
             document.querySelector('#zoom-container').addEventListener('click', function(event){
                 event.stopPropagation();
+
+                if(document.querySelector('#selectedDiv')){
+                    document.querySelector('#selectedDiv').remove();
+                }
 
                 switch(event.target.value){
                     case 'zoomOut':
@@ -477,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function(){
             });
 
             //Mute, kick and mute all buttons
-            usrList.addEventListener('click', function(event){
+            usrList.addEventListener('click', (event)=>{
 
                 switch(event.target.id){
                     case 'kick-btn':
@@ -514,10 +501,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
                         break;
                     case 'export-btn':
-                        let downloadedPaths = {
-                            paths: currentPen.paths
+                        currentPen.DownloadPaths('discordCanvas');
+                        break;
+                    case 'deleteAll-btn':
+                        if(isHost){
+                            currentPen.DeleteCanvas();
+                            socket.emit('deleteAll');
                         }
-                        DownloadPaths(downloadedPaths, 'discordCanvas');
                         break;
                     default:
                         break;
@@ -527,8 +517,10 @@ document.addEventListener('DOMContentLoaded', function(){
             document.querySelector('#import-btn').addEventListener('click', function(){
                 document.querySelector('#import-input').click();
             });
+            importBtn.addEventListener('change', () =>{
+                currentPen.ImportPaths(importBtn, isHost, isMuted, muteAll);
+            });
 
-            importBtn.addEventListener('change', ImportPaths);
             document.querySelector('#snap-btn').addEventListener('click', SnapShot)
             
             cursor.ChangeCursor('marker', currentPen.size * currentPen.basePenFactor);

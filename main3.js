@@ -12,6 +12,8 @@ if (port == null || port == "") {
   port = 3000;
 }
 
+let botId = process.env.API_KEY;
+
 /*
 Array of Room objects
 Each object contains:
@@ -25,7 +27,7 @@ Each object contains:
 */
 
 drawRooms = [];
-let timeOutLimit = 1800000; //30 minutes
+let timeOutLimit = 1800000; //10 seconds minutes
 
 server.listen(port, () =>{
     console.log("Server is connected on: " + port);
@@ -44,7 +46,7 @@ function MakeId(length) {
     return result;
 }
 
-//Search for specific value in key via https://stackoverflow.com/questions/12462318/find-a-value-in-an-array-of-objects-in-javascript 
+//Room search
 function RoomSearch(roomName, myArray){
     for (var i=0; i < myArray.length; i++) {
         if (myArray[i]['room'] === roomName) {
@@ -109,9 +111,6 @@ function TimeOut(){
     }
 }
 
-//create app/json parser
-let jsonParser = bodyParser.json();
-
 //create app/x-ww-urlencoded parser
 let urlEncodedParser = bodyParser.urlencoded({extended: false});
 
@@ -142,7 +141,7 @@ app.get('/board', function(req, res){
         users: [],
         canvas: [],
         timeOut: timeOutID,
-        muteAll: false
+        muteAll: false,
     };
     drawRooms.push(roomObj);
 
@@ -162,8 +161,6 @@ app.get('/board/:id', function(req, res){
     };
     res.render('board', {data: data});
 });
-
-let botId = "12354335asdfdserw32";
 
 //Allows the creation of a board if the id is approved
 app.get('/api/create/:id/:muteAll', function(req, res){
@@ -191,7 +188,7 @@ app.get('/api/create/:id/:muteAll', function(req, res){
             users: [],
             canvas: [],
             timeOut: timeOutID,
-            muteAll: muteAll
+            muteAll: muteAll,
         };
         drawRooms.push(roomObj);
         console.log("Created room " + roomString);
@@ -206,7 +203,11 @@ app.get('/api/create/:id/:muteAll', function(req, res){
 });
 
 app.post('/board', urlEncodedParser, function(req, res){
-    res.render('board', {data: req.body});
+    if(RoomSearch(req.body.roomCode, drawRooms) !== null){
+        res.render('board', {data: req.body});
+    }else{
+        res.render('error');
+    }
 });
 
 //On user connection
@@ -284,13 +285,16 @@ io.on("connection", (socket) =>{
         //On user draw
         /*
             Data payload:
-            -type: specifies the type of drawing (path, text)
-            -x: x representing the horizontal coordinate of the pixel
-            -y: y representing the vertical coordinate of the pixel
-            -lastx: x representing the start of the draw
-            -lasty: y representing the start of the draw
-            -size: size of the pixel
-            -color: color of the pixel
+            -userID: user's socket id
+            -eventID: event's individual id
+            -drawEvent:
+                -type: specifies the type of drawing (path, text)
+                -x: x representing the horizontal coordinate of the pixel
+                -y: y representing the vertical coordinate of the pixel
+                -lastx: x representing the start of the draw
+                -lasty: y representing the start of the draw
+                -size: size of the pixel
+                -color: color of the pixel
         */
 
         socket.on("draw", (data) =>{
@@ -362,6 +366,118 @@ io.on("connection", (socket) =>{
             }
         });
 
+        socket.on("deleteAll", () =>{
+            if(socket.isHost){
+                socket.to(socket.room).emit("deleteAll");
+
+                if(drawRooms[socket.index] && drawRooms[socket.index]['room'] === socket.room){
+                    //Reset timeOut
+                    let timeOutInfo = {
+                        room: drawRooms[socket.index]['room']
+                    };
+                    clearInterval(drawRooms[socket.index]['timeOut']);
+                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                    //save the pixel data into canvas array
+                    drawRooms[socket.index]['canvas'].length = 0;
+                }else{
+                    let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+                    if(currentRoomIndex != null){
+
+                        //Reset timeOut
+                        let timeOutInfo = {
+                            room: drawRooms[currentRoomIndex]['room']
+                        };
+                        clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+                        drawRooms[currentRoomIndex]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                        //delete content of canvas
+                        drawRooms[currentRoomIndex]['canvas'].length = 0;
+                    }
+                }
+            }
+        });
+
+        socket.on("deleteElement", (data) => {
+            if(!socket.isMuted){
+                socket.to(socket.room).emit("smartErase", data);
+                
+                if(drawRooms[socket.index] && drawRooms[socket.index]['room'] === socket.room){
+
+                    //Reset timeOut
+                    let timeOutInfo = {
+                        room: drawRooms[socket.index]['room']
+                    };
+                    clearInterval(drawRooms[socket.index]['timeOut']);
+                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                    for(let i = 0; i < drawRooms[socket.index]['canvas'].length; i++){
+                        if(drawRooms[socket.index]['canvas'][i].userId === data.userId && drawRooms[socket.index]['canvas'][i].eventId === data.eventId){
+                            drawRooms[socket.index]['canvas'].splice(i, 1);
+                            break;
+                        }
+                    }
+                }else{
+                    let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+                    if(currentRoomIndex != null){
+
+                        //Reset timeOut
+                        let timeOutInfo = {
+                            room: drawRooms[currentRoomIndex]['room']
+                        };
+                        clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+                        drawRooms[currentRoomIndex]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                        for(let i = 0; i < drawRooms[currentRoomIndex]['canvas'].length; i++){
+                            if(drawRooms[currentRoomIndex]['canvas'][i].userId === data.userId && drawRooms[currentRoomIndex]['canvas'][i].eventId === data.eventId){
+                                drawRooms[currentRoomIndex]['canvas'].splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        socket.on("moveElement", (data) =>{
+            if(!socket.isMuted){
+                socket.to(socket.room).emit("moveElement", data);
+                
+                if(drawRooms[socket.index] && drawRooms[socket.index]['room'] === socket.room){
+
+                    //Reset timeOut
+                    let timeOutInfo = {
+                        room: drawRooms[socket.index]['room']
+                    };
+                    clearInterval(drawRooms[socket.index]['timeOut']);
+                    drawRooms[socket.index]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                    for(let i = 0; i < drawRooms[socket.index]['canvas'].length; i++){
+                        if(drawRooms[socket.index]['canvas'][i].userId === data.userId && drawRooms[socket.index]['canvas'][i].eventId === data.eventId){
+                            drawRooms[socket.index]['canvas'][i].drawEvent = data.movedElement;
+                        }
+                    }
+                }else{
+                    let currentRoomIndex = RoomSearch(socket.room, drawRooms);
+                    if(currentRoomIndex != null){
+
+                        //Reset timeOut
+                        let timeOutInfo = {
+                            room: drawRooms[currentRoomIndex]['room']
+                        };
+                        clearInterval(drawRooms[currentRoomIndex]['timeOut']);
+                        drawRooms[currentRoomIndex]['timeOut'] = setInterval(TimeOut.bind(timeOutInfo), timeOutLimit);
+
+                        for(let i = 0; i < drawRooms[currentRoomIndex]['canvas'].length; i++){
+                            if(drawRooms[currentRoomIndex]['canvas'][i].userId === data.userId && drawRooms[currentRoomIndex]['canvas'][i].eventId === data.eventId){
+                                drawRooms[currentRoomIndex]['canvas'][i].drawEvent = data.movedElement;
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
         socket.on("usrKick", (data) => {
             //If socket is a host
             if(socket.isHost){
@@ -412,26 +528,11 @@ io.on("connection", (socket) =>{
                 //Delete user's socket from the room's socket array
                 let socketIndex = drawRooms[currentRoomIndex]['users'].indexOf(socket);
                 drawRooms[currentRoomIndex]['users'].splice(socketIndex, 1);
-
-                //If room doesn't have any other user, delete the room
-                if(drawRooms[currentRoomIndex]['users'].length === 0){
-                    console.log("Room has no users, proceeding to delete");
-                    clearInterval(drawRooms[currentRoomIndex]['timeOut']);
-
-                    drawRooms.splice(currentRoomIndex, 1);
-
-                    //Reset the sockets' indexes
-                    for(let i = currentRoomIndex; i < drawRooms.length; i++){
-                        drawRooms[i]['users'].forEach(userSocket => {
-                            userSocket.index = userSocket.index - 1;
-                        });
-                    }
-                }else{
-                    let data = {
-                        user: socket.username
-                    }
-                    socket.to(socket.room).emit("usrLeft", data);
+                
+                let data = {
+                    user: socket.username
                 }
+                socket.to(socket.room).emit("usrLeft", data);
             }
         });
     }else{

@@ -48,18 +48,19 @@
                 </div>
                 <!-- Drawing tools container-->
                 <div id="tools-container">
-                    <div id="colors-container">
-                        <button id="redMarker" value="red"></button>
-                        <button id="greenMarker" value="green"></button>
-                        <button id="blueMarker" value="blue"></button>
-                        <button id="blackMarker" value="black"></button>
+                    <div id="additions-container">
+                        <div id="colors-container">
+                            <button id="redMarker" value="red"></button>
+                            <button id="greenMarker" value="green"></button>
+                            <button id="blueMarker" value="blue"></button>
+                            <button id="blackMarker" value="black"></button>
+                        </div>
+                        <div id="size-container">
+                            <input type="range" id="drawSize-range" min="1" max="15" step="1">
+                            <input id="drawSize-container"></input>
+                        </div>
                     </div>
                     <div id="userActions-container">
-                        <!-- <button id="drawMore" value="drawAdd">+</button> -->
-                        <input type="range" id="drawSize-range" min="1" max="15" step="1">
-                        <input id="drawSize-container"></input>
-                        <!-- <button id="drawLess" value="drawRemove">-</button> -->
-
                         <button id="eraser" value="eraser" title="Wow, an eraser!">
                             <img src="../assets/eraser.svg">
                         </button>
@@ -68,6 +69,12 @@
                         </button>
                         <button id="text" value="text" title="Click anywhere, start typing, and then press enter to submit!">
                             <img src="../assets/text.svg">
+                        </button>
+                        <button id="rect" value="rect" title="Click anywhere, start typing, and then press enter to submit!">
+                            <img src="../assets/rect.svg">
+                        </button>
+                        <button id="smart" value="smart" title="Click anywhere, start typing, and then press enter to submit!">
+                            <img src="../assets/smart.svg">
                         </button>
                     </div>
                 </div>

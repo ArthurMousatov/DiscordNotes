@@ -2,6 +2,9 @@ function Cursor(cursorDiv, offset){
     this.cursorHelper = cursorDiv;
     this.markerCursor = "../assets/marker.svg";
     this.eraserCursor = "../assets/marker.svg";
+    this.textCursor = "../assets/text.svg";
+    this.smartCursor = "../assets/smart.svg";
+
     this.coordinates = {
         x: 0,
         y: 0
@@ -37,8 +40,6 @@ Cursor.prototype.SetCoordinates = function(x, y){
     this.coordinates.y = y - this.size.height/2 - this.offsetY;
     this.cursor.style.top = this.coordinates.y + 'px';
     this.cursor.style.left = this.coordinates.x + 'px';
-    //console.log(this.cursor.style.left, this.cursor.style.top);
-    //console.log(x, y);
 }
 
 Cursor.prototype.SetSize = function(size){
@@ -56,6 +57,12 @@ Cursor.prototype.ChangeCursor = function(cursorType, size){
         case 'eraser':
             this.cursor.setAttribute('src', this.eraserCursor);
             break;
+        case 'text':
+            this.cursor.setAttribute('src', this.textCursor);
+            break;
+        case 'smart':
+            this.cursor.setAttribute('src', this.smartCursor);
+            break;
         default:
             this.cursor.setAttribute('src', this.markerCursor);
             break;
@@ -66,7 +73,3 @@ Cursor.prototype.ChangeCursor = function(cursorType, size){
     this.cursor.setAttribute('width', this.size.width);
     this.cursor.setAttribute('height', this.size.height);
 }
-
-// Hey Gary, great video. I really liked the animations there. 
-// One thing worth mentioning is that your implementation doesn't look like it takes into consideration that the cursor is always in the way of what you would be trying to click on like a link or something. 
-// Setting "pointer-events" to "none" on .cursor allows the cursor to be clicked through and would fix that issue.
