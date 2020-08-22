@@ -249,10 +249,16 @@ main{
     height: 100px;
     background-color: white;
     border: none;
+    opacity: 0.5;
 }
 #users-btn:focus {
     outline: none;
     box-shadow: none;
+}
+#users-btn:hover{
+    color: black;
+    text-decoration: none;
+    opacity: 1;
 }
 #info-container button img{
     pointer-events: none;
