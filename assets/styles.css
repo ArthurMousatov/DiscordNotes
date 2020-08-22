@@ -18,6 +18,70 @@ main{
 #title-heading{
     font-family: 'Cabin Sketch', cursive;
 }
+
+/*Nav bar*/
+.mainNav-container{
+    width: 100%;
+    padding: 10px;
+    position: absolute;
+    top: 0;
+    z-index: 10;
+
+    display: flex;
+    flex-flow: row nowrap;
+    align-content: center;
+    justify-content: space-between;
+
+    color: black;
+    background-color: transparent;
+
+    pointer-events: none;
+}
+.logo-hyperlink{
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-family: 'Cabin Sketch', cursive;
+    color: black;
+    opacity: 0.5;
+
+    pointer-events: auto;
+}
+.logo-hyperlink:hover{
+    color: black;
+    text-decoration: none;
+    opacity: 1;
+}
+.roomInfo-container{
+    display: flex;
+    flex-flow: row nowrap;
+    align-content: flex-end;
+    justify-content: right;
+}
+#copyPaste-btn{
+    max-height: 30px; 
+    max-width: 30px;
+
+    pointer-events: auto;
+}
+#copyPaste-btn:hover{
+    cursor: pointer;
+    animation-name: copyHover;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+}
+@keyframes copyHover{
+    from{opacity: 1;}
+    to{opacity: 0.1;}
+}
+#id-container, #roomCode{
+    color: black;
+    font-size: 1rem;
+    pointer-events: auto;
+}
+#hostCode{
+    display: none;
+}
+
 /* Cursor Styles */
 #cursor-container{
     position: absolute;
@@ -30,9 +94,8 @@ main{
     z-index: 11;
     pointer-events: none;
 }
-#id-container{
-    color: white;
-}
+
+/* Menus */
 .menus-container{
     display: none;
 }
@@ -166,24 +229,32 @@ main{
     width: 40px;
     height: 30px;
 }
+
+/*Side info menu */
 #info-container{
     max-width: 400px;
     position: fixed;
     right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 10%;
+
+    display: block;
+    text-align: right;
 }
-#info-container button{
-    border-radius: 10px;
+#users-btn{
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: none;
 }
+#users-btn:focus {
+    outline: none;
+    box-shadow: none;
+  }
 #info-container button img{
     pointer-events: none;
     max-width: 100%; 
     max-height: 100%; 
     margin: 0 auto;
-}
-#hostCode{
-    display: none;
 }
 .active-btn{
     border: solid 3px black;
@@ -192,10 +263,13 @@ main{
     color: red;
     font-size: 20px;
 }
+.users-list button{
+    border-radius: 10px;
+}
 .users-list{
     max-height: 300px;
     overflow: auto;
-    padding: 20px;
+    padding: 10px;
 
     display: none;
     flex-flow: column nowrap;
@@ -243,10 +317,6 @@ main{
     height: 50px;
 }
 #mute-btn{
-    width: 50px;
-    height: 50px;
-}
-#users-btn{
     width: 50px;
     height: 50px;
 }

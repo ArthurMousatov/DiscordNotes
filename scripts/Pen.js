@@ -25,6 +25,8 @@ function Pen(size, color, pathEnd, canvas, socket, cursor){
 
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d');
+    this.ctx.webkitImageSmoothingEnabled = false;
+    this.ctx.imageSmoothingEnabled = false;
 
     this.lastCoord = {};
 
@@ -396,7 +398,7 @@ Pen.prototype.OptimizeDraw =  function(){
                             this.ctx.font = (this.drawingArray[i].drawEvent.size/this.zoomFactor) + "px " + this.drawingArray[i].drawEvent.font;
                             let newCoords = this.AdjustToLocal(this.drawingArray[i].drawEvent.x, this.drawingArray[i].drawEvent.y);
 
-                            if(newCoords.x >= rectX || newCoords.x + this.ctx.measureText(this.drawingArray[i].drawEvent.value).width/this.zoomFactor <= rectX + rectW){
+                            if(newCoords.x >= rectX && newCoords.x + this.ctx.measureText(this.drawingArray[i].drawEvent.value).width/this.zoomFactor <= rectX + rectW){
                                 if(newCoords.y >= rectY && newCoords.y <= rectY + rectH){
                                     this.currentSelect.userIds.push(this.drawingArray[i].userId);
                                     this.currentSelect.eventIds.push(this.drawingArray[i].eventId);
@@ -471,16 +473,14 @@ Pen.prototype.CreateSelectDiv = function(){
                 
                 let distX = (x - this.selectedDivCoords.x) * this.zoomFactor;
                 let distY = (y - this.selectedDivCoords.y) * this.zoomFactor;
-    
-                if(distX && distY){
-                    for(let i = 0; i < this.currentSelect.userIds.length; i++){
-                        this.MoveElement({userId: this.currentSelect.userIds[i], eventId: this.currentSelect.eventIds[i]}, distX, distY);
-                    }
-    
-                    let div = document.querySelector('#selectedDiv');
-                    div.style.top = parseFloat(div.style.top) + distY / this.zoomFactor + 'px';
-                    div.style.left = parseFloat(div.style.left) + distX / this.zoomFactor + 'px';
+                
+                for(let i = 0; i < this.currentSelect.userIds.length; i++){
+                    this.MoveElement({userId: this.currentSelect.userIds[i], eventId: this.currentSelect.eventIds[i]}, distX, distY);
                 }
+
+                let div = document.querySelector('#selectedDiv');
+                div.style.top = parseFloat(div.style.top) + distY / this.zoomFactor + 'px';
+                div.style.left = parseFloat(div.style.left) + distX / this.zoomFactor + 'px';
     
                 this.selectedDivCoords = {
                     x: event.clientX - rect.left,
@@ -573,6 +573,7 @@ Pen.prototype.AdjustToLocal = function(x,y){
 
 //Redraw whole canvas
 Pen.prototype.ReDraw = function(){
+
     this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
 
     for(let i = 0; i < this.drawingArray.length; i++){
