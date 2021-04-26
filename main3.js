@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');
 
 let port = process.env.PORT;
 if (port == null || port == "") {
-  port = 3000;
+  port = 8000;
 }
 
 let botId = process.env.API_KEY;
@@ -27,7 +27,7 @@ Each object contains:
 */
 
 drawRooms = [];
-let timeOutLimit = 1800000; //10 seconds minutes
+let timeOutLimit = 1800000; //milliseconds
 
 server.listen(port, () =>{
     console.log("Server is connected on: " + port);
