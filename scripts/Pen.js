@@ -512,8 +512,17 @@ class Pen{
         }
     }
 
+    UndoAction(){
+        let lastElement = this.drawingArray.pop();
+        if(lastElement && !this.socket.isMuted)
+        {
+            this.socket.emit('deleteElement', {userId: lastElement.userId, eventId: lastElement.eventId});
+            this.ReDraw();
+        }
+    }
+
     DeleteElement(data){
-        for(let i = 0; i < this.drawingArray.length; i++){
+        for(let i = this.drawingArray.length - 1; i >= 0; i--){
             if(this.drawingArray[i].userId === data.userId && this.drawingArray[i].eventId === data.eventId){
                 this.drawingArray.splice(i, 1);
                 this.ReDraw();
