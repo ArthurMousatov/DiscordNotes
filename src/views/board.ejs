@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="../assets/styles.css">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <script src="/socket.io/socket.io.js"></script>
+        <title>Discord Notes</title>
+    </head>
+    <body>
+        <%- include('nav.ejs') %>
+        <div id="cursor-helper"></div>
+        <main class="mx-auto w-100">
+            <form class="mx-auto my-5 w-50 d-flex flex-column" name="joinForm" id="joinForm">
+                <div class="form-group">
+                  <label for="userName">Username</label>
+                  <input name="user" type="text" class="form-control" id="userName" aria-describedby="userName" value="Anonymous" required maxlength="20">
+                </div>
+                <div class="form-check">
+                    <input name="hostCheck" type="checkbox" class="form-check-input" id="hostcheck">
+                    <label class="form-check-label" for="hostcheck">Are you a host?</label>
+                </div>
+                <div class="form-group">
+                  <label for="hostID">Host ID</label>
+                  <input name="host" type="password" class="form-control" id="hostID" placeholder="Host ID" disabled>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <p id="error-paragraph"></p>
+            </form>
+
+            <div class="menus-container">
+                <!-- Information container-->
+                <div id="info-container">
+                    <button id="users-btn">
+                        <img src="../assets/user.svg">
+                    </button>
+                    <ul class="users-list">
+                        <h1 id="isMuted-heading" class="heading-5 text-center">MUTED</h1>
+                        <li class="options-container">
+                            <input id="import-input" type="file" accept=".json"></input>
+                            <button id="import-btn" title="Import a json file!">Import</button>
+                            <button id="export-btn" type="file" accept=".json" title="Trying to save your work? Use this button!">Export</button>
+                            <button id="snap-btn" title="Export the current canvas as png!">Snap</button>
+                        </li>
+                        <li class="user-container" id="user-clone-container">
+                            <p id="userName">UserName + if he's host</p>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Drawing tools container-->
+                <div id="tools-container">
+                    <div id="additions-container">
+                        <div id="colors-container">
+                            <button id="redMarker" value="red"></button>
+                            <button id="greenMarker" value="green"></button>
+                            <button id="blueMarker" value="blue"></button>
+                            <button id="blackMarker" value="black"></button>
+                        </div>
+                        <div id="size-container">
+                            <input type="range" id="drawSize-range" min="1" max="15" step="1">
+                            <input id="drawSize-container"></input>
+                        </div>
+                    </div>
+                    <div id="userActions-container">
+                        <button id="eraser" value="eraser" title="Wow, an eraser!">
+                            <img src="../assets/eraser.svg">
+                        </button>
+                        <button id="marker" class="active-btn" value="marker" title="The ole classic!">
+                            <img src="../assets/brush.svg">
+                        </button>
+                        <button id="text" value="text" title="Click anywhere, start typing, and then press enter to submit!">
+                            <img src="../assets/text.svg">
+                        </button>
+                        <button id="rect" value="rect" title="Click anywhere, start typing, and then press enter to submit!">
+                            <img src="../assets/rect.svg">
+                        </button>
+                        <button id="smart" value="smart" title="Click anywhere, start typing, and then press enter to submit!">
+                            <img src="../assets/smart.svg">
+                        </button>
+                    </div>
+                </div>
+                <div id="zoom-container">
+                    <button id="zoomIn" value="zoomIn">+</button>
+                    <button id="zoomOut" value="zoomOut">-</button>
+                </div>
+            </div>
+        </main>
+    </body>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+    <!-- Whiteboard APP-->
+    <script src="/scripts/Pen.js"></script>
+    <script src="/scripts/cursor.js"></script>
+    <script src="/scripts/app.js"></script>
+</html>

@@ -7,6 +7,7 @@
 body{
     min-height: 100;
     overflow: hidden;
+    background-color: white;
 }
 html{
     height: 100%;
@@ -14,6 +15,9 @@ html{
 main{
     position: relative;
     overflow: hidden;
+}
+canvas{
+    background-color: white;
 }
 #title-heading{
     font-family: 'Cabin Sketch', cursive;

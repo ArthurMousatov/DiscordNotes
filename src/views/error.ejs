@@ -8,8 +8,13 @@
     <body style="background-image: url(../assets/angry.png); background-repeat: no-repeat; background-position: center center;">
         <%- include('nav.ejs') %>
         <main>
-            <h1 class="display-1 mx-auto text-center">Sorry...</h1>
-            <h1 class="h1 mx-auto text-center">but the room doesn't exist.</h1>
+            <% if(locals.message) { %>
+                <h1 class="display-1 mx-auto text-center"><%=locals.name%></h1>
+                <h1 class="h1 mx-auto text-center"><%=locals.message%></h1>
+            <% }else{ %>
+                <h1 class="display-1 mx-auto text-center">Sorry...</h1>
+                <h1 class="h1 mx-auto text-center">Something Happened</h1>
+            <% } %>
         </main>
     </body>
 </html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="../assets/styles.css">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch&display=swap" rel="stylesheet"> 
+        <title>Discord Notes</title>
+        <style>
+            h1{
+                font-family: 'Cabin Sketch', cursive;
+            }
+            h2,h3,h4,h5{
+                font-family: cursive;
+            }
+        </style>
+    </head>
+    <body style="background-image: url(../assets/face.png); background-repeat: no-repeat; background-position: left bottom;">
+        <main>
+            <h1 id="title-heading" class="display-1 mx-auto my-5 text-center">Welcome to Discord Notes!</h1>
+
+            <div class="mx-auto w-100 my-5 d-flex flex-row justify-content-around align-items-end">
+                
+                <form class="d-flex flex-column" method="GET" action="/board">
+                    <h2>Don't have a room?</h2>
+                    <button type="submit" class="mx-auto btn btn-success">Create one!</button>
+                </form>
+    
+                <form class="d-flex flex-column" method="POST" action="/board">
+                    <div class="form-group">
+                        <h2>Already have a room?</h2>
+                        <input type="text" class="form-control w-75 mx-auto" name="roomCode" id="roomInput" aria-describedby="roomInput" placeholder="Enter room code" required>
+                    </div>
+                    <button type="submit" class="mx-auto btn btn-danger">Enter Room</button>
+                </form>
+    
+                <div class="d-flex flex-column">
+                    <h2>Do You Have Discord?</h2>
+                    <a class="mx-auto btn btn-info" href="https://discord.com/oauth2/authorize?client_id=719881315377479752&scope=bot">Add our whiteboard bot!</a>
+                </div>
+            </div>
+
+            <h1 class="display-3 mx-auto my-5 text-center">Have any suggestions?</h1>
+
+            <div class="mx-auto w-100 d-flex flex-row justify-content-center align-items-center">
+                <div class="d-flex flex-column mx-5">
+                    <h4>Github Page</h4>
+                    <a href="https://github.com/Venoshulk/DiscordNotes" class="btn btn-secondary mx-auto my-2">View Github Page</a>
+                </div>
+
+                <div class="d-flex flex-column mx-5">
+                    <h4>Developer's discord</h4>
+                    <a href="https://discord.com/channels/@me/202151990111764480/" class="btn btn-primary mx-auto my-2">Talk to the Dev</a>
+                </div>
+            </div>
+        </main>
+    </body>
+
+    <!-- BootStrap Don't Touch! -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+</html>

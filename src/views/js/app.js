@@ -2,10 +2,10 @@ let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
         let connectQuery = {
-            query: 'room=' + document.querySelector('#roomCode').innerHTML
+            query: 'room=' + document.querySelector('#roomCode').innerHTML,
+            secure: true
         };
-        //const socket = io.connect('http://localhost:8000/', connectQuery);
-        const socket = io.connect('https://discord-notes.herokuapp.com/', connectQuery);
+        const socket = io.connect(`${location.protocol}//${location.host}/`, connectQuery);
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
@@ -333,6 +333,11 @@ document.addEventListener('DOMContentLoaded', function(){
                     currentPen.cursor.HideCursor();
                     lastWorldCoord = {x: event.clientX - rect.left, y: event.clientY - rect.top};
                 }
+            });
+
+            window.addEventListener('keyup', (event) =>{
+                if(event.code === 'KeyZ' && event.ctrlKey)
+                    currentPen.UndoAction();
             });
 
             //Drag canvas
