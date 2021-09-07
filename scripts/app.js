@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function(){
         let connectQuery = {
             query: 'room=' + document.querySelector('#roomCode').innerHTML
         };
-        const socket = io.connect(`${location.protocol}//:${location.host}/`, connectQuery);
+        const socket = io.connect(`${location.protocol}//${location.host}/`, connectQuery);
         const roomCode = document.querySelector('#roomCode').innerHTML;
         let hostCode;
         if(document.querySelector('#hostCode')){
