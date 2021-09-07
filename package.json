@@ -4,7 +4,7 @@
   "description": "Drawboard for online schooling using Discord",
   "main": "main.js",
   "scripts": {
-    "start": "node main3.js"
+    "start": "node server.js"
   },
   "author": "Arthur Mousatov",
   "license": "ISC",
