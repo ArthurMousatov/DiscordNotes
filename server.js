@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const server = require('http').createServer(app);
 const io = require("socket.io")(server);
@@ -44,10 +45,16 @@ server.listen(port, () =>{
 //create app/x-ww-urlencoded parser
 let urlEncodedParser = bodyParser.urlencoded({extended: false});
 
+app.use(cors());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, './src/views'))
 app.use('/assets', express.static('assets'));
 app.use('/scripts', express.static('./src/views/js'));
+app.use(function(req,  res, next){
+    res.header("Access-COntrol-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 app.get('/', homeHandler.handle);
 

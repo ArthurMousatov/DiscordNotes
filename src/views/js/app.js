@@ -1,6 +1,7 @@
 let App = {};
 document.addEventListener('DOMContentLoaded', function(){
     App.whiteboard = function(){
+        // DONE
         let connectQuery = {
             query: 'room=' + document.querySelector('#roomCode').innerHTML,
             secure: true
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function(){
         let muteAll = false;
         const userPrefix = 'user-';
 
-        //Kick a user
+        //Kick a user DONE
         function Kick(usr){
             let userName = usr.slice(userPrefix.length, usr.length);
 
@@ -36,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function(){
             socket.emit('usrKick', data);
         }
 
-        //Mute and unmute a user
+        //Mute and unmute a user DONE
         function Mute(usr){
             let userName = usr.slice(userPrefix.length, usr.length);
             
@@ -45,7 +46,8 @@ document.addEventListener('DOMContentLoaded', function(){
             };
             socket.emit('usrMute', data);
         }
-
+        
+        //DONE
         function CreateUser(host, userName, isUserMuted){
             let currentUserCont = usrCont.cloneNode(true);
             currentUserCont.id = userPrefix + userName;
@@ -78,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function(){
             usrList.appendChild(currentUserCont);
         }
 
-        //Users info init
+        //Users info init DONE
         function InitUsers(data){
             for(let i = 0; i < data.users.length; i++){
                 CreateUser(data.users[i].isHost, data.users[i].name);
@@ -101,14 +103,14 @@ document.addEventListener('DOMContentLoaded', function(){
         //Join form
         let joinForm = document.forms["joinForm"];
 
-        //If user created the room
+        //If user created the room DONE
         if(hostCode){
             joinForm.elements.host.value = hostCode;
             $('#hostcheck').prop("checked", true);
             $('#hostID').prop("disabled", false);
         }
 
-        //On check box click
+        //On check box click DONE
         $("#hostcheck").click(function(event){
             if($('#hostID').prop("disabled") === false){
                 $('#hostID').prop("disabled", true);
@@ -117,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
 
-        //On submitting the join form
+        //On submitting the join form DONE
         joinForm.addEventListener("submit", (event) =>{
             event.preventDefault();
             let data;
@@ -146,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
 
-        //Hide and unhide the users list
+        //Hide and unhide the users list DONE
         document.querySelector('#users-btn').addEventListener('click', ()=>{
             if(usrList.style.display !== "block"){
                 usrList.style.display = "block";
@@ -209,13 +211,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 document.body.appendChild(downloadAnchorNode); // required for firefox
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
-            }
-    
-            //Draw the existing canvas
-            if(data.canvas.length != 0){
-                for(let i = 0; i < data.canvas.length; i++){
-                    currentPen.DrawRequest(data.canvas[i]);
-                }
             }
 
             //Socket requests

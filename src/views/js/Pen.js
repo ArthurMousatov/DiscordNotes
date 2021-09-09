@@ -1,4 +1,4 @@
-class Pen{
+export default class Pen{
     constructor(size, color, pathEnd, canvas, socket, cursor){
         this.worldOrigin = {
             x: 0,
